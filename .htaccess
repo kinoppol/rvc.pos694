@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Serve existing files/directories (assets, install.php, index.php) as-is.
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Everything else goes through the front controller.
+RewriteRule ^ index.php [L]

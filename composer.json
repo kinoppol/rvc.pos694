@@ -1,0 +1,19 @@
+{
+    "name": "rvc/pos-erp",
+    "description": "Multi-merchant POS & ERP web application",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "slim/slim": "^4.12",
+        "slim/psr7": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}
