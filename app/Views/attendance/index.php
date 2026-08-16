@@ -14,7 +14,7 @@
             <div style="font-size:15px;font-weight:600;color:#fff"><?= \App\Services\View::e($user['full_name']) ?></div>
             <div class="text-muted" style="font-size:11.5px"><?= ucfirst($user['role']) ?> · <?= \App\Services\View::e($branch['name'] ?? '-') ?></div>
         </div>
-        <a href="/logout" style="width:36px;height:36px;border-radius:11px;background:#1E293B;display:grid;place-items:center;font-size:12px;color:#E2E8F0">ออก</a>
+        <a href="<?= APP_BASE_PATH ?>/logout" style="width:36px;height:36px;border-radius:11px;background:#1E293B;display:grid;place-items:center;font-size:12px;color:#E2E8F0">ออก</a>
     </div>
 
     <div style="margin:0 20px;height:220px;border-radius:18px;overflow:hidden;position:relative;background:#132033;border:1px solid #1E293B">
@@ -69,7 +69,7 @@ document.getElementById('clock-btn').addEventListener('click', async () => {
     if (!currentPos) { alert('กรุณารอให้ระบบอ่านตำแหน่ง GPS ก่อน'); return; }
     const type = document.getElementById('clock-label').textContent.includes('เข้า') ? 'in' : 'out';
     const body = new URLSearchParams({ lat: currentPos.coords.latitude, lng: currentPos.coords.longitude, type });
-    const res = await fetch('/attendance/clock', { method: 'POST', body });
+    const res = await fetch(BASE + '/attendance/clock', { method: 'POST', body });
     const data = await res.json();
     if (data.ok) {
         alert((data.within_geofence ? '✅ ' : '⚠️ นอกพื้นที่ ') + 'บันทึกเวลา' + (data.clock_type === 'in' ? 'เข้างาน' : 'ออกงาน') + ' ' + data.clocked_at + ' (ระยะห่าง ' + data.distance_m + ' ม.)');

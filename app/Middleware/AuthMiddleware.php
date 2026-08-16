@@ -11,7 +11,7 @@ class AuthMiddleware
     {
         return function (callable $next) {
             if (!AuthService::check()) {
-                header('Location: /login');
+                header('Location: ' . APP_BASE_PATH . '/login');
                 exit;
             }
             $next();

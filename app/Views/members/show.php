@@ -7,7 +7,7 @@
 <div class="app-shell">
     <?php \App\Services\View::render('layout/sidebar', ['active' => 'members', 'user' => $user]); ?>
     <div class="main-area">
-        <div class="topbar"><a href="/members" style="font-size:13px">← กลับรายชื่อสมาชิก</a></div>
+        <div class="topbar"><a href="<?= APP_BASE_PATH ?>/members" style="font-size:13px">← กลับรายชื่อสมาชิก</a></div>
         <div class="content" style="display:flex;justify-content:center">
         <div style="width:720px">
         <div class="card" style="border-radius:16px;box-shadow:0 16px 44px rgba(15,23,42,.18);overflow:hidden">
@@ -76,7 +76,7 @@
                         <?php if (!$recentSales): ?><p class="text-muted" style="font-size:12px">ยังไม่มีประวัติบิล</p><?php endif; ?>
                     </div>
                     <div class="flex gap-8" style="margin-top:16px">
-                        <a href="/pos" onclick="event.preventDefault(); fetch('/members/<?= $member['id'] ?>/use',{method:'POST'}).then(()=>location.href='/pos')" class="btn btn-primary flex-1" style="text-decoration:none;text-align:center">ใช้สมาชิกกับบิลนี้</a>
+                        <a href="<?= APP_BASE_PATH ?>/pos" onclick="event.preventDefault(); fetch(BASE+'/members/<?= $member['id'] ?>/use',{method:'POST'}).then(()=>location.href=BASE+'/pos')" class="btn btn-primary flex-1" style="text-decoration:none;text-align:center">ใช้สมาชิกกับบิลนี้</a>
                     </div>
                 </div>
             </div>

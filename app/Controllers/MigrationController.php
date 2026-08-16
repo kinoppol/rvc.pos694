@@ -35,7 +35,7 @@ class MigrationController
         $_SESSION['flash'] = $result['error']
             ? 'เกิดข้อผิดพลาด: ' . $result['error']
             : (count($result['applied']) ? 'รัน migration สำเร็จ: ' . implode(', ', $result['applied']) : 'ไม่มี migration ที่ค้างอยู่');
-        header('Location: /admin/migrations');
+        header('Location: ' . APP_BASE_PATH . '/admin/migrations');
         exit;
     }
 
@@ -46,7 +46,7 @@ class MigrationController
         $_SESSION['flash'] = $result['error']
             ? 'เกิดข้อผิดพลาด: ' . $result['error']
             : (count($result['rolled_back']) ? 'ย้อนกลับสำเร็จ: ' . implode(', ', $result['rolled_back']) : 'ไม่มี batch ให้ย้อนกลับ');
-        header('Location: /admin/migrations');
+        header('Location: ' . APP_BASE_PATH . '/admin/migrations');
         exit;
     }
 }

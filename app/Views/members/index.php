@@ -26,7 +26,7 @@
                             <td><?= \App\Services\View::e($m['tier_name'] ?? '-') ?></td>
                             <td class="mono" style="text-align:right"><?= number_format($m['points']) ?></td>
                             <td class="mono" style="text-align:right"><?= \App\Services\View::money((float) $m['total_spend']) ?></td>
-                            <td style="text-align:right;padding-right:14px"><a href="/members/<?= $m['id'] ?>" class="btn btn-outline" style="height:32px;padding:0 12px;font-size:12px">ดูโปรไฟล์</a></td>
+                            <td style="text-align:right;padding-right:14px"><a href="<?= APP_BASE_PATH ?>/members/<?= $m['id'] ?>" class="btn btn-outline" style="height:32px;padding:0 12px;font-size:12px">ดูโปรไฟล์</a></td>
                         </tr>
                     <?php endforeach; ?>
                     <?php if (!$members): ?><tr><td colspan="6" style="padding:20px;text-align:center" class="text-muted">ไม่พบสมาชิก</td></tr><?php endif; ?>

@@ -8,6 +8,7 @@ use PDO;
 class AuthService
 {
     private PDO $db;
+    public string $loginError = '';
 
     public function __construct(PDO $db)
     {
@@ -20,8 +21,27 @@ class AuthService
         $stmt->execute([$username]);
         $user = $stmt->fetch();
         if (!$user || !password_verify($password, $user['password_hash'])) {
+            $this->loginError = 'credentials';
             return null;
         }
+
+        // check merchant status (graceful if migration not yet run)
+        try {
+            $mStmt = $this->db->prepare('SELECT status FROM merchants WHERE id = ?');
+            $mStmt->execute([$user['merchant_id']]);
+            $merchant = $mStmt->fetch();
+            if ($merchant && $merchant['status'] === 'pending') {
+                $this->loginError = 'pending';
+                return null;
+            }
+            if ($merchant && $merchant['status'] === 'suspended') {
+                $this->loginError = 'suspended';
+                return null;
+            }
+        } catch (\PDOException $e) {
+            // migration not yet run — allow login
+        }
+
         $this->establishSession($user);
         return $user;
     }
@@ -64,6 +84,17 @@ class AuthService
         $_SESSION['branch_id'] = $user['branch_id'] !== null ? (int) $user['branch_id'] : null;
         $_SESSION['role'] = $user['role'];
         $_SESSION['full_name'] = $user['full_name'];
+
+        // store platform flag so every page can check without a DB query
+        $_SESSION['is_platform'] = false;
+        try {
+            $mStmt = $this->db->prepare('SELECT is_platform FROM merchants WHERE id = ?');
+            $mStmt->execute([$user['merchant_id']]);
+            $merchant = $mStmt->fetch();
+            $_SESSION['is_platform'] = $merchant && (bool) $merchant['is_platform'];
+        } catch (\PDOException $e) {
+            // migration not yet run
+        }
     }
 
     public function logout(): void
@@ -82,11 +113,12 @@ class AuthService
             return null;
         }
         return [
-            'id' => $_SESSION['user_id'],
+            'id'          => $_SESSION['user_id'],
             'merchant_id' => $_SESSION['merchant_id'],
-            'branch_id' => $_SESSION['branch_id'],
-            'role' => $_SESSION['role'],
-            'full_name' => $_SESSION['full_name'],
+            'branch_id'   => $_SESSION['branch_id'],
+            'role'        => $_SESSION['role'],
+            'full_name'   => $_SESSION['full_name'],
+            'is_platform' => $_SESSION['is_platform'] ?? false,
         ];
     }
 

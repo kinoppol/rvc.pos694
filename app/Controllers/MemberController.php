@@ -67,7 +67,7 @@ class MemberController
     {
         $id = (int) $args['id'];
         \App\Services\CartService::setMember($id);
-        header('Location: /pos');
+        header('Location: ' . APP_BASE_PATH . '/pos');
         exit;
     }
 

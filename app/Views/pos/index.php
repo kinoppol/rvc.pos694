@@ -27,9 +27,9 @@
                 </form>
 
                 <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:16px">
-                    <a class="chip<?= $category === '' ? ' active' : '' ?>" href="/pos">ทั้งหมด</a>
+                    <a class="chip<?= $category === '' ? ' active' : '' ?>" href="<?= APP_BASE_PATH ?>/pos">ทั้งหมด</a>
                     <?php foreach ($categories as $c): ?>
-                        <a class="chip<?= $category === $c ? ' active' : '' ?>" href="/pos?category=<?= urlencode($c) ?>"><?= \App\Services\View::e($c) ?></a>
+                        <a class="chip<?= $category === $c ? ' active' : '' ?>" href="<?= APP_BASE_PATH ?>/pos?category=<?= urlencode($c) ?>"><?= \App\Services\View::e($c) ?></a>
                     <?php endforeach; ?>
                 </div>
 
@@ -99,7 +99,7 @@
                         <button type="button" id="hold-bill" class="btn btn-outline">พักบิล</button>
                         <button type="button" class="btn btn-dark">ใบกำกับภาษี</button>
                     </div>
-                    <a href="/pos/pay" class="btn btn-primary" style="width:100%;margin-top:8px;height:54px;font-size:16px">ชำระเงิน <span class="mono" style="font-size:11.5px;background:rgba(255,255,255,.18);padding:3px 7px;border-radius:5px">F9</span></a>
+                    <a href="<?= APP_BASE_PATH ?>/pos/pay" class="btn btn-primary" style="width:100%;margin-top:8px;height:54px;font-size:16px">ชำระเงิน <span class="mono" style="font-size:11.5px;background:rgba(255,255,255,.18);padding:3px 7px;border-radius:5px">F9</span></a>
                 </div>
             </div>
         </div>
@@ -108,7 +108,7 @@
 <script>
 async function post(url, data) {
     const body = new URLSearchParams(data);
-    const res = await fetch(url, { method: 'POST', body, headers: {'X-Requested-With':'fetch'} });
+    const res = await fetch(BASE + url, { method: 'POST', body, headers: {'X-Requested-With':'fetch'} });
     return res.json();
 }
 function applyTotals(t) {

@@ -157,6 +157,14 @@ if ($step === 'seed') {
                 $pdo->prepare('INSERT INTO users (merchant_id, branch_id, username, email, full_name, password_hash, pin_hash, role) VALUES (?, ?, ?, ?, ?, ?, ?, "owner")')
                     ->execute([$merchantId, $branchId, $adminUser, $adminEmail ?: null, $adminName ?: $adminUser, $passHash, $pinHash]);
 
+                // mark this as the platform merchant and seed default settings
+                try {
+                    $pdo->prepare('UPDATE merchants SET is_platform = 1 WHERE id = ?')->execute([$merchantId]);
+                    $pdo->exec("INSERT IGNORE INTO system_settings (`key`, `value`) VALUES ('require_approval', '0')");
+                } catch (\PDOException $e) {
+                    // columns/table not yet created (migration 0002 pending) — safe to ignore
+                }
+
                 $pdo->commit();
 
                 if ($seedDemo) {
@@ -214,7 +222,7 @@ if ($step === 'done') {
     render_layout('ติดตั้งเสร็จสมบูรณ์', function () {
         echo '<div class="ok-banner">ติดตั้งระบบสำเร็จแล้ว 🎉</div>';
         echo '<p>คุณสามารถลบหรือจำกัดสิทธิ์การเข้าถึงไฟล์ <code>install.php</code> ได้ตามความเหมาะสม ระบบจะแสดงหน้าจอนี้เป็นหน้าแจ้งเตือน "ติดตั้งแล้ว" ทุกครั้งที่เปิดไฟล์นี้ซ้ำ</p>';
-        echo '<a class="btn" href="/login">ไปหน้าเข้าสู่ระบบ →</a>';
+        echo '<a class="btn" href="' . APP_BASE_PATH . '/login">ไปหน้าเข้าสู่ระบบ →</a>';
     });
     exit;
 }
@@ -242,7 +250,7 @@ function render_reinstall_notice(array $errors = []): void
         render_errors($errors);
         echo '<div class="ok-banner">ตรวจพบว่าระบบนี้ติดตั้งเรียบร้อยแล้ว</div>';
         echo '<p>เลือกดำเนินการ:</p>';
-        echo '<a class="btn" href="/login">ไปหน้าเข้าสู่ระบบ</a>';
+        echo '<a class="btn" href="' . APP_BASE_PATH . '/login">ไปหน้าเข้าสู่ระบบ</a>';
         echo '<a class="btn secondary" href="?reconfigure=1&step=db">ตั้งค่าฐานข้อมูลใหม่ (Reconfigure — คงข้อมูลเดิม)</a>';
         echo '<a class="btn danger" href="?reset=1">ล้างข้อมูลทั้งหมดและติดตั้งใหม่ (Reset)</a>';
     });
@@ -257,7 +265,7 @@ function render_reset_confirm_form(): void
             <label>พิมพ์คำว่า <strong>RESET</strong> เพื่อยืนยัน<input name="confirm_phrase" autocomplete="off" required></label>
             <button class="btn danger" type="submit" name="confirm_reset" value="1">ยืนยันล้างข้อมูลทั้งหมด</button>
         </form>
-        <a class="btn secondary" href="/install.php">ยกเลิก</a>
+        <a class="btn secondary" href="<?= APP_BASE_PATH ?>/install.php">ยกเลิก</a>
         <?php
     });
 }

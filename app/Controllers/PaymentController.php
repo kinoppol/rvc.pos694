@@ -17,7 +17,7 @@ class PaymentController
         $db = Database::connection();
         $cart = CartService::get();
         if (empty($cart['items'])) {
-            header('Location: /pos');
+            header('Location: ' . APP_BASE_PATH . '/pos');
             exit;
         }
         $totals = CartService::totals($db);

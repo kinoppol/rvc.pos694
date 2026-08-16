@@ -15,8 +15,8 @@
             <?php endif; ?>
 
             <div class="flex gap-8" style="margin-bottom:16px">
-                <form method="post" action="/admin/migrations/run"><button class="btn btn-primary" type="submit">รัน Migration ที่ค้างอยู่ (<?= count($pending) ?>)</button></form>
-                <form method="post" action="/admin/migrations/rollback" onsubmit="return confirm('ย้อนกลับ batch ล่าสุด? การเปลี่ยนแปลงโครงสร้าง/ข้อมูลที่เกี่ยวข้องจะถูกยกเลิก')"><button class="btn btn-danger" type="submit">ย้อนกลับ Batch ล่าสุด</button></form>
+                <form method="post" action="<?= APP_BASE_PATH ?>/admin/migrations/run"><button class="btn btn-primary" type="submit">รัน Migration ที่ค้างอยู่ (<?= count($pending) ?>)</button></form>
+                <form method="post" action="<?= APP_BASE_PATH ?>/admin/migrations/rollback" onsubmit="return confirm('ย้อนกลับ batch ล่าสุด? การเปลี่ยนแปลงโครงสร้าง/ข้อมูลที่เกี่ยวข้องจะถูกยกเลิก')"><button class="btn btn-danger" type="submit">ย้อนกลับ Batch ล่าสุด</button></form>
             </div>
 
             <div class="card" style="overflow:hidden">

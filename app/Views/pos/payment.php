@@ -29,7 +29,7 @@
                     <div class="flex" style="justify-content:space-between"><span>Ref</span><span class="mono" style="font-weight:600"><?= \App\Services\View::e($ref) ?></span></div>
                 </div>
                 <div class="flex gap-8" style="margin-top:14px">
-                    <a href="/pos" class="btn btn-outline flex-1">ยกเลิก</a>
+                    <a href="<?= APP_BASE_PATH ?>/pos" class="btn btn-outline flex-1">ยกเลิก</a>
                     <button class="btn btn-success flex-1" id="confirm-promptpay">ยืนยันรับเงินแล้ว</button>
                 </div>
             </div>
@@ -107,11 +107,11 @@ function updateChange() {
 
 async function confirmPayment(method, tendered) {
     const body = new URLSearchParams({ method, tendered: tendered ?? '' });
-    const res = await fetch('/pos/pay/confirm', { method: 'POST', body });
+    const res = await fetch(BASE + '/pos/pay/confirm', { method: 'POST', body });
     const data = await res.json();
     if (data.ok) {
         alert('ชำระเงินสำเร็จ: ' + data.invoice_no + (data.change !== null && data.change !== undefined ? ' · เงินทอน ฿' + Number(data.change).toFixed(2) : ''));
-        location.href = '/pos';
+        location.href = BASE + '/pos';
     } else {
         alert(data.error || 'เกิดข้อผิดพลาด');
     }

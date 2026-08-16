@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\Controllers\AdminMerchantController;
 use App\Controllers\AttendanceController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
@@ -8,20 +9,24 @@ use App\Controllers\MemberController;
 use App\Controllers\MigrationController;
 use App\Controllers\PaymentController;
 use App\Controllers\PosController;
+use App\Controllers\RegisterController;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\PlatformAdminMiddleware;
 use App\Middleware\RoleMiddleware;
 use App\Router;
 
 /** @var Router $router */
 
 $router->get('/', function () {
-    header('Location: /pos');
+    header('Location: ' . APP_BASE_PATH . '/pos');
     exit;
 });
 
 $router->get('/login', [new AuthController(), 'showLogin']);
 $router->post('/login', [new AuthController(), 'login']);
 $router->get('/logout', [new AuthController(), 'logout']);
+$router->get('/register', [new RegisterController(), 'show']);
+$router->post('/register', [new RegisterController(), 'store']);
 
 $router->group([AuthMiddleware::handle()], function (Router $router) {
     $pos = new PosController();
@@ -55,5 +60,14 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
         $router->get('/admin/migrations', [$mig, 'index']);
         $router->post('/admin/migrations/run', [$mig, 'run']);
         $router->post('/admin/migrations/rollback', [$mig, 'rollback']);
+    });
+
+    $router->group([PlatformAdminMiddleware::handle()], function (Router $router) {
+        $adm = new AdminMerchantController();
+        $router->get('/admin/merchants', [$adm, 'index']);
+        $router->post('/admin/merchants/{id}/approve', [$adm, 'approve']);
+        $router->post('/admin/merchants/{id}/suspend', [$adm, 'suspend']);
+        $router->get('/admin/settings', [$adm, 'settings']);
+        $router->post('/admin/settings', [$adm, 'saveSettings']);
     });
 });

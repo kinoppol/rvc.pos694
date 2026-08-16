@@ -73,6 +73,30 @@ storage/                     # logs/, cache/, uploads/, installed.lock — must 
 
 **Geofencing:** `App\Services\GeoService::distanceMeters()` (Haversine formula) compares the browser's `navigator.geolocation` coordinates against the branch's stored `lat`/`lng`/`geofence_radius_m` on every clock-in/out (`POST /attendance/clock`), recorded in `attendance_logs.within_geofence`.
 
+## Coding conventions
+
+**Controller methods** always have signature `public function methodName(array $args): void` where `$args` carries named URL params (e.g. `{id}` → `$args['id']`). Fetch the session user with `AuthService::currentUser()` at the top; get a DB handle from `Database::connection()`. There is no DI container — construct dependencies inline.
+
+**Middleware** is a static factory returning a closure: `static function (callable $next): void { ... $next(); }`. Add new middleware in `app/Middleware/`, return a callable from a static method, pass it to `$router->group([...], ...)` or as the third arg to `get()`/`post()`.
+
+**View helpers** — always use these in templates:
+- `View::e($value)` — `htmlspecialchars` wrapper; **use for every user-supplied value** echoed into HTML
+- `View::money(float $amount)` — formats as `฿1,234.56`
+- `View::json($data, int $status)` — JSON response (sets Content-Type, exits)
+- `View::render('feature/template', $data)` — `extract()`s `$data` into template scope
+- `View::partial('feature/template', $data)` — same but returns string (output buffered)
+
+**AuthService** has two modes:
+- Instance methods (`new AuthService($db)->attemptLogin()`, `loginWithPin()`, `verifyPin()`) — require a PDO instance, used for authentication flows
+- Static methods (`AuthService::currentUser()`, `AuthService::check()`, `AuthService::hashPassword()`) — read/write the session, usable anywhere after `bootstrap.php`
+
+**Business rules encoded in CartService / PaymentController:**
+- Prices are **VAT-inclusive** (7%). VAT is *derived*: `grand_total × 7 / 107` — do not add VAT on top.
+- Birthday discount: 10% off if the member's `birthdate` month equals the current month.
+- Loyalty points: 1 point per ฿100 spent (`floor(grand_total / 100)`), added to `members.points` and `members.total_spend` at payment confirmation.
+
+**Subfolder hosting:** `APP_BASE_PATH` is auto-detected from `$_SERVER['SCRIPT_NAME']` in `bootstrap.php` — the router strips it before matching. No manual config needed unless you override the constant before including `bootstrap.php`.
+
 ## Known gaps / stubs (by design, not oversights)
 
 - PromptPay QR is a visual placeholder (no real payment gateway integration) — the payment popup generates a reference number and lets staff manually confirm receipt, matching the mockup's own placeholder.

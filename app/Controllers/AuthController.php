@@ -13,14 +13,16 @@ class AuthController
     public function showLogin(array $args): void
     {
         if (!InstallState::isFullyInstalled()) {
-            header('Location: /install.php');
+            header('Location: ' . APP_BASE_PATH . '/install.php');
             exit;
         }
         if (AuthService::check()) {
-            header('Location: /pos');
+            header('Location: ' . APP_BASE_PATH . '/pos');
             exit;
         }
-        View::render('auth/login', ['error' => $_GET['error'] ?? null]);
+        $flash = $_SESSION['register_flash'] ?? null;
+        unset($_SESSION['register_flash']);
+        View::render('auth/login', ['error' => $_GET['error'] ?? null, 'success' => $flash]);
     }
 
     public function login(array $args): void
@@ -30,17 +32,23 @@ class AuthController
         $auth = new AuthService(Database::connection());
         $user = $auth->attemptLogin($username, $password);
         if (!$user) {
-            header('Location: /login?error=' . urlencode('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
+            $messages = [
+                'pending'     => 'ร้านค้าของคุณรอการอนุมัติจากผู้ดูแลระบบ กรุณารอสักครู่',
+                'suspended'   => 'ร้านค้าของคุณถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
+                'credentials' => 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+            ];
+            $msg = $messages[$auth->loginError] ?? 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+            header('Location: ' . APP_BASE_PATH . '/login?error=' . urlencode($msg));
             exit;
         }
-        header('Location: /pos');
+        header('Location: ' . APP_BASE_PATH . '/pos');
         exit;
     }
 
     public function logout(array $args): void
     {
         (new AuthService(Database::connection()))->logout();
-        header('Location: /login');
+        header('Location: ' . APP_BASE_PATH . '/login');
         exit;
     }
 }
