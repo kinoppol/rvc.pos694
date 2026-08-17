@@ -11,6 +11,7 @@ use App\Controllers\PaymentController;
 use App\Controllers\PosController;
 use App\Controllers\RegisterController;
 use App\Controllers\StaffController;
+use App\Controllers\StoreController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\PlatformAdminMiddleware;
 use App\Middleware\RoleMiddleware;
@@ -70,6 +71,13 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
     $router->post('/admin/impersonate/stop', [new AdminMerchantController(), 'stopImpersonate']);
 
     $router->group([RoleMiddleware::only('owner')], function (Router $router) {
+        $store = new StoreController();
+        $router->get('/store', [$store, 'index']);
+        $router->post('/store', [$store, 'updateProfile']);
+        $router->post('/store/branches', [$store, 'branchStore']);
+        $router->post('/store/branches/{id}', [$store, 'branchUpdate']);
+        $router->post('/store/branches/{id}/delete', [$store, 'branchDelete']);
+
         $mig = new MigrationController();
         $router->get('/admin/migrations', [$mig, 'index']);
         $router->post('/admin/migrations/run', [$mig, 'run']);
