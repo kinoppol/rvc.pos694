@@ -64,6 +64,11 @@
                                             <button class="btn btn-outline" type="submit" style="height:32px;padding:0 12px;font-size:12px;color:#DC2626;border-color:#FECACA">ระงับ</button>
                                         </form>
                                     <?php endif; ?>
+                                    <?php if ((int) $m['user_count'] > 0): ?>
+                                        <form method="post" action="<?= APP_BASE_PATH ?>/admin/merchants/<?= $m['id'] ?>/impersonate" onsubmit="return confirm('สวมสิทธิ์เข้าใช้งานร้าน <?= \App\Services\View::e(addslashes($m['name'])) ?>?')">
+                                            <button class="btn btn-outline" type="submit" style="height:32px;padding:0 12px;font-size:12px;color:#1D4ED8;border-color:#BFDBFE">สวมสิทธิ์</button>
+                                        </form>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

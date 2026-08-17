@@ -10,6 +10,7 @@ use App\Controllers\MigrationController;
 use App\Controllers\PaymentController;
 use App\Controllers\PosController;
 use App\Controllers\RegisterController;
+use App\Controllers\StaffController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\PlatformAdminMiddleware;
 use App\Middleware\RoleMiddleware;
@@ -55,6 +56,19 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
     $router->get('/members/{id}', [$mem, 'show']);
     $router->post('/members/{id}/use', [$mem, 'useWithCart']);
 
+    $router->group([RoleMiddleware::only('owner', 'manager')], function (Router $router) {
+        $staff = new StaffController();
+        $router->get('/staff', [$staff, 'index']);
+        $router->get('/staff/new', [$staff, 'create']);
+        $router->post('/staff', [$staff, 'store']);
+        $router->get('/staff/{id}/edit', [$staff, 'edit']);
+        $router->post('/staff/{id}', [$staff, 'update']);
+        $router->post('/staff/{id}/toggle', [$staff, 'toggle']);
+    });
+
+    // available to the impersonated (merchant) session, hence outside the platform-admin group
+    $router->post('/admin/impersonate/stop', [new AdminMerchantController(), 'stopImpersonate']);
+
     $router->group([RoleMiddleware::only('owner')], function (Router $router) {
         $mig = new MigrationController();
         $router->get('/admin/migrations', [$mig, 'index']);
@@ -67,6 +81,7 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
         $router->get('/admin/merchants', [$adm, 'index']);
         $router->post('/admin/merchants/{id}/approve', [$adm, 'approve']);
         $router->post('/admin/merchants/{id}/suspend', [$adm, 'suspend']);
+        $router->post('/admin/merchants/{id}/impersonate', [$adm, 'impersonate']);
         $router->get('/admin/settings', [$adm, 'settings']);
         $router->post('/admin/settings', [$adm, 'saveSettings']);
     });

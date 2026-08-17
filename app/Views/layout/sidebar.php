@@ -6,6 +6,7 @@ $items = [
     'dashboard'  => ['ภาพรวม',   '/dashboard'],
     'attendance' => ['ลงเวลา',   '/attendance'],
     'members'    => ['สมาชิก',   '/members'],
+    'staff'      => ['พนักงาน',  '/staff'],
     'migrations' => ['Migrations', '/admin/migrations'],
 ];
 $isPlatformAdmin = ($user['is_platform'] ?? false) && ($user['role'] ?? '') === 'owner';
@@ -24,6 +25,7 @@ if ($isPlatformAdmin) {
     <div class="logo">POS</div>
     <?php foreach ($items as $key => [$label, $href]):
         if ($key === 'migrations' && ($user['role'] ?? '') !== 'owner') continue;
+        if ($key === 'staff' && !in_array($user['role'] ?? '', ['owner', 'manager'], true)) continue;
     ?>
         <a class="nav-item<?= $active === $key ? ' active' : '' ?>" href="<?= APP_BASE_PATH . $href ?>"><?= \App\Services\View::e($label) ?></a>
     <?php endforeach; ?>
@@ -40,6 +42,16 @@ if ($isPlatformAdmin) {
     <?php endif; ?>
 
     <div class="spacer"></div>
-    <a class="nav-item" href="<?= APP_BASE_PATH ?>/logout" title="ออกจากระบบ">ออก</a>
+    <?php if (\App\Services\AuthService::isImpersonating()):
+        $imp = \App\Services\AuthService::impersonator(); ?>
+        <div style="margin:0 8px 8px;padding:8px 10px;background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;text-align:center">
+            <div style="font-size:9.5px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.06em">สวมสิทธิ์อยู่</div>
+            <div style="font-size:10.5px;color:#92400E;margin:2px 0 6px;word-break:break-word"><?= \App\Services\View::e($imp['merchant_name'] ?? '') ?></div>
+            <form method="post" action="<?= APP_BASE_PATH ?>/admin/impersonate/stop">
+                <button type="submit" class="btn btn-outline" style="width:100%;height:28px;padding:0 6px;font-size:11px;color:#92400E;border-color:#FCD34D;background:#fff">กลับเป็น Admin</button>
+            </form>
+        </div>
+    <?php endif; ?>
+    <a class="nav-item" href="<?= APP_BASE_PATH ?>/logout" title="<?= \App\Services\AuthService::isImpersonating() ? 'ออกจากการสวมสิทธิ์' : 'ออกจากระบบ' ?>">ออก</a>
     <div class="avatar"><?= \App\Services\View::e(mb_substr($user['full_name'] ?? '?', 0, 2)) ?></div>
 </div>

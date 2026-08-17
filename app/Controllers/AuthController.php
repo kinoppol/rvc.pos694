@@ -47,6 +47,12 @@ class AuthController
 
     public function logout(array $args): void
     {
+        // ออกจากระบบระหว่างสวมสิทธิ์ = กลับคืนสู่สิทธิ์ผู้ดูแลระบบ (ไม่ใช่ออกจากระบบจริง)
+        if (AuthService::stopImpersonation()) {
+            $_SESSION['flash'] = 'ออกจากการสวมสิทธิ์ กลับสู่สิทธิ์ผู้ดูแลระบบแล้ว';
+            header('Location: ' . APP_BASE_PATH . '/admin/merchants');
+            exit;
+        }
         (new AuthService(Database::connection()))->logout();
         header('Location: ' . APP_BASE_PATH . '/login');
         exit;
