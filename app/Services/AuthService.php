@@ -76,9 +76,59 @@ class AuthService
         return null;
     }
 
+    /**
+     * Platform admin "สวมสิทธิ์" (impersonate) a merchant user: the admin's own
+     * session is stashed under `impersonator` so it can be restored on exit.
+     */
+    public function impersonate(array $targetUser): void
+    {
+        $original = $_SESSION['impersonator'] ?? [
+            'user_id'     => $_SESSION['user_id'] ?? null,
+            'merchant_id' => $_SESSION['merchant_id'] ?? null,
+            'branch_id'   => $_SESSION['branch_id'] ?? null,
+            'role'        => $_SESSION['role'] ?? null,
+            'full_name'   => $_SESSION['full_name'] ?? null,
+            'is_platform' => $_SESSION['is_platform'] ?? false,
+        ];
+
+        CartService::clear();
+        $this->establishSession($targetUser);
+        $_SESSION['impersonator'] = $original;
+    }
+
+    /** Restore the stashed platform-admin session. Returns false if not impersonating. */
+    public static function stopImpersonation(): bool
+    {
+        if (empty($_SESSION['impersonator']['user_id'])) {
+            return false;
+        }
+        $admin = $_SESSION['impersonator'];
+        CartService::clear();
+        session_regenerate_id(true);
+        unset($_SESSION['impersonator']);
+        $_SESSION['user_id']     = (int) $admin['user_id'];
+        $_SESSION['merchant_id'] = (int) $admin['merchant_id'];
+        $_SESSION['branch_id']   = $admin['branch_id'] !== null ? (int) $admin['branch_id'] : null;
+        $_SESSION['role']        = $admin['role'];
+        $_SESSION['full_name']   = $admin['full_name'];
+        $_SESSION['is_platform'] = (bool) $admin['is_platform'];
+        return true;
+    }
+
+    public static function isImpersonating(): bool
+    {
+        return !empty($_SESSION['impersonator']['user_id']);
+    }
+
+    public static function impersonator(): ?array
+    {
+        return $_SESSION['impersonator'] ?? null;
+    }
+
     private function establishSession(array $user): void
     {
         session_regenerate_id(true);
+        unset($_SESSION['impersonator']);
         $_SESSION['user_id'] = (int) $user['id'];
         $_SESSION['merchant_id'] = (int) $user['merchant_id'];
         $_SESSION['branch_id'] = $user['branch_id'] !== null ? (int) $user['branch_id'] : null;
@@ -119,6 +169,7 @@ class AuthService
             'role'        => $_SESSION['role'],
             'full_name'   => $_SESSION['full_name'],
             'is_platform' => $_SESSION['is_platform'] ?? false,
+            'impersonating' => self::isImpersonating(),
         ];
     }
 

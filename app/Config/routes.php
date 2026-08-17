@@ -55,6 +55,9 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
     $router->get('/members/{id}', [$mem, 'show']);
     $router->post('/members/{id}/use', [$mem, 'useWithCart']);
 
+    // available to the impersonated (merchant) session, hence outside the platform-admin group
+    $router->post('/admin/impersonate/stop', [new AdminMerchantController(), 'stopImpersonate']);
+
     $router->group([RoleMiddleware::only('owner')], function (Router $router) {
         $mig = new MigrationController();
         $router->get('/admin/migrations', [$mig, 'index']);
@@ -67,6 +70,7 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
         $router->get('/admin/merchants', [$adm, 'index']);
         $router->post('/admin/merchants/{id}/approve', [$adm, 'approve']);
         $router->post('/admin/merchants/{id}/suspend', [$adm, 'suspend']);
+        $router->post('/admin/merchants/{id}/impersonate', [$adm, 'impersonate']);
         $router->get('/admin/settings', [$adm, 'settings']);
         $router->post('/admin/settings', [$adm, 'saveSettings']);
     });

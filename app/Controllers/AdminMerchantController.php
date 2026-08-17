@@ -49,6 +49,50 @@ class AdminMerchantController
         exit;
     }
 
+    /**
+     * สวมสิทธิ์ร้านค้า — switch the platform admin's session to a user of the
+     * target merchant (preferring its owner). The admin session is stashed and
+     * restored by AuthService::stopImpersonation().
+     */
+    public function impersonate(array $args): void
+    {
+        $id = (int) $args['id'];
+        $db = Database::connection();
+
+        $stmt = $db->prepare("SELECT * FROM users
+            WHERE merchant_id = ? AND active = 1
+            ORDER BY FIELD(role, 'owner', 'manager', 'cashier', 'staff'), id
+            LIMIT 1");
+        $stmt->execute([$id]);
+        $target = $stmt->fetch();
+
+        $mStmt = $db->prepare('SELECT name, is_platform FROM merchants WHERE id = ?');
+        $mStmt->execute([$id]);
+        $merchant = $mStmt->fetch();
+
+        if (!$target || !$merchant || (int) $merchant['is_platform'] === 1) {
+            $_SESSION['flash'] = 'ไม่สามารถสวมสิทธิ์ร้านค้านี้ได้ (ไม่พบผู้ใช้ที่ใช้งานอยู่)';
+            header('Location: ' . APP_BASE_PATH . '/admin/merchants');
+            exit;
+        }
+
+        (new AuthService($db))->impersonate($target);
+        $_SESSION['impersonator']['merchant_name'] = $merchant['name'];
+        header('Location: ' . APP_BASE_PATH . '/pos');
+        exit;
+    }
+
+    public function stopImpersonate(array $args): void
+    {
+        if (AuthService::stopImpersonation()) {
+            $_SESSION['flash'] = 'ออกจากการสวมสิทธิ์ กลับสู่สิทธิ์ผู้ดูแลระบบแล้ว';
+            header('Location: ' . APP_BASE_PATH . '/admin/merchants');
+            exit;
+        }
+        header('Location: ' . APP_BASE_PATH . '/pos');
+        exit;
+    }
+
     public function settings(array $args): void
     {
         $user = AuthService::currentUser();
