@@ -55,7 +55,12 @@
                         </div>
                     <?php endforeach; ?>
                     <?php if (!$products): ?>
-                        <p class="text-muted">ไม่พบสินค้า</p>
+                        <div class="text-muted" style="display:grid;gap:10px;justify-items:start">
+                            <span>ไม่พบสินค้า</span>
+                            <?php if (in_array($user['role'], ['owner', 'manager'], true)): ?>
+                                <a href="<?= APP_BASE_PATH ?>/products/new" class="btn btn-primary" style="height:36px;padding:0 16px;font-size:12.5px;display:inline-flex;align-items:center">+ เพิ่มรายการสินค้า</a>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
