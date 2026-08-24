@@ -52,6 +52,15 @@ class AttendanceController
         $branchStmt->execute([$branchId]);
         $branch = $branchStmt->fetch();
 
+        // สาขาที่ยังไม่ตั้งพิกัด จะคำนวณระยะจาก (0,0) แล้วกลายเป็น "นอกพื้นที่" เสมอ
+        if ($branch === false || $branch['lat'] === null || $branch['lng'] === null) {
+            View::json([
+                'ok'    => false,
+                'error' => 'สาขานี้ยังไม่ได้ตั้งพิกัด กรุณาให้เจ้าของร้านตั้งค่าที่หน้า ข้อมูลร้านค้า → สาขา',
+            ], 422);
+            return;   // View::json() ไม่ได้ exit ให้เอง
+        }
+
         $distance = GeoService::distanceMeters($lat, $lng, (float) $branch['lat'], (float) $branch['lng']);
         $within = $distance <= (float) $branch['geofence_radius_m'];
 

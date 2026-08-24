@@ -52,21 +52,84 @@
 </div>
 <script>
 let currentPos = null;
+let watchId = null;
+const geoText = document.getElementById('geo-text');
+const geoCoords = document.getElementById('geo-coords');
+const geoStatus = document.getElementById('geo-status');
+const ALLOWED_RADIUS = <?= (int) ($branch['geofence_radius_m'] ?? 50) ?>;
+
+function setState(kind, text, sub) {
+    const palette = {
+        wait:  ['rgba(5,46,35,.92)',  '#065F46', '#34D399', '#6EE7B7'],
+        ok:    ['rgba(5,46,35,.92)',  '#065F46', '#34D399', '#6EE7B7'],
+        error: ['rgba(69,10,10,.92)', '#991B1B', '#F87171', '#FCA5A5'],
+    }[kind];
+    geoStatus.style.background = palette[0];
+    geoStatus.style.borderColor = palette[1];
+    geoStatus.firstElementChild.style.background = palette[2];
+    geoCoords.style.color = palette[3];
+    geoText.textContent = text;
+    if (sub !== undefined) geoCoords.textContent = sub;
+}
+
 function updateGeo(pos) {
     currentPos = pos;
-    document.getElementById('geo-text').textContent = 'พร้อมลงเวลา · ความแม่นยำ ±' + Math.round(pos.coords.accuracy) + ' ม.';
-    document.getElementById('geo-coords').textContent = pos.coords.latitude.toFixed(4) + ', ' + pos.coords.longitude.toFixed(4);
+    setState('ok',
+        'พร้อมลงเวลา · ความแม่นยำ ±' + Math.round(pos.coords.accuracy) + ' ม.',
+        pos.coords.latitude.toFixed(5) + ', ' + pos.coords.longitude.toFixed(5) + ' · รัศมีอนุญาต ' + ALLOWED_RADIUS + ' ม.');
 }
-if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(updateGeo, (err) => {
-        document.getElementById('geo-text').textContent = 'ไม่สามารถอ่านตำแหน่งได้: ' + err.message;
-    }, { enableHighAccuracy: true });
+
+// อธิบาย error ของ Geolocation API เป็นภาษาไทย (err.message มักว่างในบางเบราว์เซอร์)
+function geoErrorText(err) {
+    if (err.code === 1) return 'ถูกปฏิเสธสิทธิ์ตำแหน่ง — กดไอคอนหน้า URL แล้วอนุญาต Location';
+    if (err.code === 2) return 'อ่านตำแหน่งไม่ได้ — เปิด Location Services ของเครื่องแล้วลองใหม่';
+    if (err.code === 3) return 'หาตำแหน่งไม่ทันเวลา — ลองใหม่อีกครั้ง หรือใช้มือถือที่มี GPS';
+    return 'อ่านตำแหน่งไม่ได้' + (err.message ? ': ' + err.message : '');
+}
+
+function showRetry() {
+    if (document.getElementById('geo-retry')) return;
+    const btn = document.createElement('button');
+    btn.id = 'geo-retry';
+    btn.type = 'button';
+    btn.textContent = 'ลองใหม่';
+    btn.style.cssText = 'flex:none;background:#1E293B;color:#E2E8F0;border:1px solid #334155;border-radius:8px;padding:5px 10px;font-size:11.5px;cursor:pointer';
+    btn.addEventListener('click', () => { btn.remove(); startWatch(true); });
+    geoStatus.appendChild(btn);
+}
+
+/**
+ * enableHighAccuracy + ไม่ตั้ง timeout จะค้างที่ "กำลังค้นหาตำแหน่ง…" ตลอดไป
+ * บนเครื่องที่ไม่มี GPS — จึงตั้ง timeout ไว้ และถ้าหมดเวลาให้ถอยไปใช้
+ * ความแม่นยำต่ำ (Wi-Fi/IP) ซึ่งเดสก์ท็อปตอบได้
+ */
+function startWatch(highAccuracy) {
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    setState('wait', 'กำลังค้นหาตำแหน่ง…', 'รัศมีอนุญาต ' + ALLOWED_RADIUS + ' ม.');
+    watchId = navigator.geolocation.watchPosition(updateGeo, (err) => {
+        if (err.code === 3 && highAccuracy) {
+            startWatch(false);   // ถอยไปโหมดความแม่นยำต่ำ
+            return;
+        }
+        setState('error', geoErrorText(err), 'รัศมีอนุญาต ' + ALLOWED_RADIUS + ' ม.');
+        showRetry();
+    }, {
+        enableHighAccuracy: highAccuracy,
+        timeout: highAccuracy ? 15000 : 30000,
+        maximumAge: 60000,
+    });
+}
+
+if (!navigator.geolocation) {
+    setState('error', 'เบราว์เซอร์ไม่รองรับการระบุตำแหน่ง');
+} else if (!window.isSecureContext) {
+    setState('error', 'ต้องเปิดผ่าน https:// เท่านั้น เบราว์เซอร์จึงจะให้ใช้ตำแหน่ง');
 } else {
-    document.getElementById('geo-text').textContent = 'เบราว์เซอร์ไม่รองรับ GPS';
+    startWatch(true);
 }
 
 document.getElementById('clock-btn').addEventListener('click', async () => {
-    if (!currentPos) { alert('กรุณารอให้ระบบอ่านตำแหน่ง GPS ก่อน'); return; }
+    if (!currentPos) { alert('ยังอ่านตำแหน่ง GPS ไม่ได้ กรุณารอสักครู่หรือกด "ลองใหม่"'); return; }
     const type = document.getElementById('clock-label').textContent.includes('เข้า') ? 'in' : 'out';
     const body = new URLSearchParams({ lat: currentPos.coords.latitude, lng: currentPos.coords.longitude, type });
     const res = await fetch(BASE + '/attendance/clock', { method: 'POST', body });
@@ -75,7 +138,7 @@ document.getElementById('clock-btn').addEventListener('click', async () => {
         alert((data.within_geofence ? '✅ ' : '⚠️ นอกพื้นที่ ') + 'บันทึกเวลา' + (data.clock_type === 'in' ? 'เข้างาน' : 'ออกงาน') + ' ' + data.clocked_at + ' (ระยะห่าง ' + data.distance_m + ' ม.)');
         location.reload();
     } else {
-        alert('เกิดข้อผิดพลาด');
+        alert(data.error || 'เกิดข้อผิดพลาด');
     }
 });
 </script>
