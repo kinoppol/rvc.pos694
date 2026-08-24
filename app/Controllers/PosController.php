@@ -20,6 +20,20 @@ class PosController
         $category = $_GET['category'] ?? '';
         $q = trim($_GET['q'] ?? '');
 
+        // ยิงบาร์โค้ด/SKU ตรงตัว = หยิบใส่ตะกร้าเลย ไม่ต้องกดเลือก variant
+        if ($q !== '') {
+            $scanStmt = $db->prepare('SELECT v.id FROM product_variants v
+                JOIN products p ON p.id = v.product_id
+                WHERE p.merchant_id = ? AND (v.barcode = ? OR v.sku = ?) LIMIT 1');
+            $scanStmt->execute([$user['merchant_id'], $q, $q]);
+            $scanned = $scanStmt->fetchColumn();
+            if ($scanned) {
+                $this->addVariantToCart($db, (int) $scanned, 1);
+                header('Location: ' . APP_BASE_PATH . '/pos');
+                exit;
+            }
+        }
+
         $sql = "SELECT p.*, c.name AS category_name FROM products p
                 LEFT JOIN categories c ON c.id = p.category_id
                 WHERE p.merchant_id = ?";
@@ -29,7 +43,11 @@ class PosController
             $params[] = $category;
         }
         if ($q !== '') {
-            $sql .= ' AND p.name LIKE ?';
+            // ค้นหาชื่อสินค้า หรือ SKU/บาร์โค้ดบางส่วนของตัวเลือกใดก็ได้
+            $sql .= ' AND (p.name LIKE ? OR EXISTS (SELECT 1 FROM product_variants v3
+                        WHERE v3.product_id = p.id AND (v3.sku LIKE ? OR v3.barcode LIKE ?)))';
+            $params[] = "%$q%";
+            $params[] = "%$q%";
             $params[] = "%$q%";
         }
         $sql .= ' ORDER BY p.name';
@@ -79,13 +97,22 @@ class PosController
         $variantId = (int) ($_POST['variant_id'] ?? 0);
         $qty = max(1, (int) ($_POST['qty'] ?? 1));
         $db = Database::connection();
+        if (!$this->addVariantToCart($db, $variantId, $qty)) {
+            View::json(['error' => 'ไม่พบสินค้า'], 404);
+            return;
+        }
+        View::json(['ok' => true, 'totals' => CartService::totals($db)]);
+    }
+
+    /** ใส่ variant ลงตะกร้าพร้อมคิดราคา (markdown / ราคาเฉพาะตัวเลือก) */
+    private function addVariantToCart(PDO $db, int $variantId, int $qty): bool
+    {
         $stmt = $db->prepare('SELECT v.id, v.size, v.color, v.sku, v.price_override, p.name, p.base_price, p.markdown_percent
             FROM product_variants v JOIN products p ON p.id = v.product_id WHERE v.id = ?');
         $stmt->execute([$variantId]);
         $v = $stmt->fetch();
         if (!$v) {
-            View::json(['error' => 'ไม่พบสินค้า'], 404);
-            return;
+            return false;
         }
         $price = (float) ($v['price_override'] ?? $v['base_price']);
         if ($v['markdown_percent'] > 0) {
@@ -97,7 +124,7 @@ class PosController
             'sku' => $v['sku'],
             'price' => $price,
         ], $qty);
-        View::json(['ok' => true, 'totals' => CartService::totals($db)]);
+        return true;
     }
 
     public function cartUpdate(array $args): void
