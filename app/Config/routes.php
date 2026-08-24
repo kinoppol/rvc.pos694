@@ -9,6 +9,7 @@ use App\Controllers\MemberController;
 use App\Controllers\MigrationController;
 use App\Controllers\PaymentController;
 use App\Controllers\PosController;
+use App\Controllers\ProductController;
 use App\Controllers\RegisterController;
 use App\Controllers\StaffController;
 use App\Controllers\StoreController;
@@ -58,6 +59,14 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
     $router->post('/members/{id}/use', [$mem, 'useWithCart']);
 
     $router->group([RoleMiddleware::only('owner', 'manager')], function (Router $router) {
+        $prod = new ProductController();
+        $router->get('/products', [$prod, 'index']);
+        $router->get('/products/new', [$prod, 'create']);
+        $router->post('/products', [$prod, 'store']);
+        $router->get('/products/{id}/edit', [$prod, 'edit']);
+        $router->post('/products/{id}', [$prod, 'update']);
+        $router->post('/products/{id}/delete', [$prod, 'destroy']);
+
         $staff = new StaffController();
         $router->get('/staff', [$staff, 'index']);
         $router->get('/staff/new', [$staff, 'create']);
