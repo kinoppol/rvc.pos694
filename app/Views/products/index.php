@@ -30,7 +30,7 @@
                         <option value="<?= $c['id'] ?>" <?= $categoryId === (int) $c['id'] ? 'selected' : '' ?>><?= $e($c['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <?php if ($user['role'] === 'owner' && count($branches) > 1): ?>
+                <?php if (in_array($user['role'], ['owner', 'manager'], true) && count($branches) > 1): ?>
                     <select name="branch_id" style="height:40px" title="สาขาที่ใช้แสดงสต็อก">
                         <?php foreach ($branches as $b): ?>
                             <option value="<?= $b['id'] ?>" <?= (int) $branchId === (int) $b['id'] ? 'selected' : '' ?>>สต็อก: <?= $e($b['name']) ?></option>

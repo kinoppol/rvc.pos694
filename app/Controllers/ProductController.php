@@ -287,11 +287,11 @@ class ProductController
         return $sku;
     }
 
-    /** สาขาที่กำลังดูสต็อกอยู่ — owner สลับสาขาได้, คนอื่นยึดสาขาตัวเอง */
+    /** สาขาที่กำลังดูสต็อกอยู่ — owner/ผู้จัดการสลับสาขาได้ (จัดการสินค้าร่วมกันทั้งกลุ่ม), พนักงานอื่นยึดสาขาตัวเอง */
     private function currentBranchId(PDO $db, array $user): int
     {
         $requested = isset($_REQUEST['branch_id']) && $_REQUEST['branch_id'] !== '' ? (int) $_REQUEST['branch_id'] : null;
-        if ($requested !== null && $user['role'] === 'owner') {
+        if ($requested !== null && in_array($user['role'], ['owner', 'manager'], true)) {
             $stmt = $db->prepare('SELECT id FROM branches WHERE id = ? AND merchant_id = ?');
             $stmt->execute([$requested, $user['merchant_id']]);
             if ($stmt->fetch()) {
