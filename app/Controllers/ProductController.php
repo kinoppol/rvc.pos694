@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Services\AuthService;
 use App\Services\Database;
+use App\Services\ImageUploader;
 use App\Services\View;
 use PDO;
 
@@ -81,11 +82,18 @@ class ProductController
         $db = Database::connection();
         $data = $this->productInput($db, $user);
 
-        $stmt = $db->prepare('INSERT INTO products (merchant_id, category_id, name, base_price, cost_price, markdown_percent, image_note)
-            VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $imagePath = null;
+        try {
+            $imagePath = ImageUploader::store($_FILES['image'] ?? []);
+        } catch (\RuntimeException $e) {
+            $this->back($e->getMessage(), '/products/new');
+        }
+
+        $stmt = $db->prepare('INSERT INTO products (merchant_id, category_id, name, base_price, cost_price, markdown_percent, image_note, image_path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
         $stmt->execute([
             $user['merchant_id'], $data['category_id'], $data['name'],
-            $data['base_price'], $data['cost_price'], $data['markdown_percent'], $data['image_note'],
+            $data['base_price'], $data['cost_price'], $data['markdown_percent'], $data['image_note'], $imagePath,
         ]);
         $productId = (int) $db->lastInsertId();
 
@@ -107,11 +115,26 @@ class ProductController
         }
         $data = $this->productInput($db, $user, $id);
 
-        $db->prepare('UPDATE products SET category_id = ?, name = ?, base_price = ?, cost_price = ?, markdown_percent = ?, image_note = ?
+        $imagePath = $product['image_path'] ?? null;
+        if (!empty($_POST['remove_image'])) {
+            ImageUploader::delete($imagePath);
+            $imagePath = null;
+        }
+        try {
+            $uploaded = ImageUploader::store($_FILES['image'] ?? []);
+            if ($uploaded !== null) {
+                ImageUploader::delete($imagePath);
+                $imagePath = $uploaded;
+            }
+        } catch (\RuntimeException $e) {
+            $this->back($e->getMessage(), '/products/' . $id . '/edit');
+        }
+
+        $db->prepare('UPDATE products SET category_id = ?, name = ?, base_price = ?, cost_price = ?, markdown_percent = ?, image_note = ?, image_path = ?
                 WHERE id = ? AND merchant_id = ?')
            ->execute([
                $data['category_id'], $data['name'], $data['base_price'], $data['cost_price'],
-               $data['markdown_percent'], $data['image_note'], $id, $user['merchant_id'],
+               $data['markdown_percent'], $data['image_note'], $imagePath, $id, $user['merchant_id'],
            ]);
 
         $this->syncVariants($db, $user, $id, $data['name']);
@@ -136,6 +159,13 @@ class ProductController
         $stmt->execute([$id]);
         if ((int) $stmt->fetchColumn() > 0) {
             $this->back('ลบไม่ได้ — สินค้านี้มีประวัติการขายแล้ว');
+        }
+
+        $imgStmt = $db->prepare('SELECT image_path FROM product_variants WHERE product_id = ? AND image_path IS NOT NULL
+            UNION ALL SELECT image_path FROM products WHERE id = ? AND image_path IS NOT NULL');
+        $imgStmt->execute([$id, $id]);
+        foreach ($imgStmt->fetchAll(PDO::FETCH_COLUMN) as $file) {
+            ImageUploader::delete($file);
         }
 
         $db->prepare('DELETE FROM products WHERE id = ? AND merchant_id = ?')->execute([$id, $user['merchant_id']]);
@@ -225,7 +255,7 @@ class ProductController
         $rows = $_POST['variants'] ?? [];
         $blocked = 0;
 
-        foreach ($rows as $row) {
+        foreach ($rows as $i => $row) {
             $variantId = isset($row['id']) && $row['id'] !== '' ? (int) $row['id'] : null;
             $sku     = trim($row['sku'] ?? '');
             $size    = trim($row['size'] ?? '') ?: null;
@@ -268,11 +298,55 @@ class ProductController
             $db->prepare('INSERT INTO stock_levels (branch_id, variant_id, quantity, reorder_point) VALUES (?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), reorder_point = VALUES(reorder_point)')
                ->execute([$branchId, $variantId, $qty, $reorder]);
+
+            $this->applyVariantImage($db, $variantId, $i, !empty($row['remove_image']));
         }
 
         if ($blocked > 0) {
             $_SESSION['product_error'] = 'มี ' . $blocked . ' ตัวเลือกที่ลบไม่ได้เพราะเคยถูกขายไปแล้ว';
         }
+    }
+
+    /** Save / replace / clear the image for one variant row (index $i in the POST). */
+    private function applyVariantImage(PDO $db, int $variantId, int $i, bool $remove): void
+    {
+        $stmt = $db->prepare('SELECT image_path FROM product_variants WHERE id = ?');
+        $stmt->execute([$variantId]);
+        $current = $stmt->fetchColumn() ?: null;
+
+        $next = $current;
+        if ($remove) {
+            ImageUploader::delete($current);
+            $next = null;
+        }
+        try {
+            $uploaded = ImageUploader::store($this->fileSlice('variant_image', $i));
+            if ($uploaded !== null) {
+                ImageUploader::delete($next);
+                $next = $uploaded;
+            }
+        } catch (\RuntimeException $e) {
+            $_SESSION['product_error'] = $e->getMessage();
+        }
+
+        if ($next !== $current) {
+            $db->prepare('UPDATE product_variants SET image_path = ? WHERE id = ?')->execute([$next, $variantId]);
+        }
+    }
+
+    /** Reshape $_FILES['key']['x'][$i] into a flat {tmp_name,error,size,name} slice. */
+    private function fileSlice(string $key, int $i): array
+    {
+        $f = $_FILES[$key] ?? null;
+        if (!is_array($f) || !isset($f['name'][$i])) {
+            return ['error' => UPLOAD_ERR_NO_FILE, 'tmp_name' => '', 'size' => 0, 'name' => ''];
+        }
+        return [
+            'name'     => $f['name'][$i],
+            'tmp_name' => $f['tmp_name'][$i] ?? '',
+            'error'    => $f['error'][$i] ?? UPLOAD_ERR_NO_FILE,
+            'size'     => $f['size'][$i] ?? 0,
+        ];
     }
 
     private function generateSku(PDO $db, string $productName): string

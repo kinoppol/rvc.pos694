@@ -44,7 +44,7 @@ There is no `composer install` / build / lint / test step — this is intentiona
 - Before anything touches the database, it runs `App\Services\PermissionChecker::checkAll()` — PHP version, required extensions (`pdo_mysql`, `mbstring`, `openssl`, `json`), and write-access to `app/Config/` and `storage/**`. Installation is blocked until these pass.
 - Schema is applied via `App\Services\MigrationRunner`, the **same class** the admin UI uses — install = "run every migration from zero", so the two paths can't drift apart.
 - **Admin → Migrations** (`/admin/migrations`, platform-admin only — `PlatformAdminMiddleware`) lists every file in `database/migrations/` against what's been applied, and can run pending migrations or roll back the last batch.
-- Current migrations: `0001_init_schema` (full schema), `0002_merchant_registration` (`status`/`is_platform` columns, `system_settings`), `0003_merchant_profile` (merchant phone/email/address), `0004_branch_join_code` (`merchants.join_code`).
+- Current migrations: `0001_init_schema` (full schema), `0002_merchant_registration` (`status`/`is_platform` columns, `system_settings`), `0003_merchant_profile` (merchant phone/email/address), `0004_branch_join_code` (`merchants.join_code`), `0005_product_images` (`products.image_path` + `product_variants.image_path`).
 - Migration files live in `database/migrations/`, named `NNNN_description.php`, each returning an anonymous object with `up(PDO $db)` / `down(PDO $db)`. **Important:** MariaDB/MySQL implicitly commits on every DDL statement, so `MigrationRunner` intentionally does *not* wrap `up()`/`down()` in an explicit PDO transaction (see the comment in [app/Services/MigrationRunner.php](app/Services/MigrationRunner.php) — wrapping DDL in `beginTransaction()`/`commit()` throws spurious "no active transaction" errors once MySQL auto-commits underneath PDO's back).
 
 ## Architecture
@@ -110,4 +110,5 @@ storage/                     # logs/, cache/, uploads/, installed.lock — must 
 
 - PromptPay QR is a visual placeholder (no real payment gateway integration) — the payment popup generates a reference number and lets staff manually confirm receipt, matching the mockup's own placeholder.
 - SMS/LINE e-receipt buttons are UI-only, no dispatch integration.
+- Product/variant images upload to `storage/uploads/products/` (random hex filenames) via `App\Services\ImageUploader` and are served back through `MediaController` at `/media/product/{file}` — never linked directly, since `storage/` is `Require all denied`. `products.image_note` remains the emoji/text fallback when there is no uploaded image.
 - Stock transfers (`stock_transfers`/`stock_transfer_items` tables exist in the schema) have no controller/UI yet.

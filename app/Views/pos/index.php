@@ -42,7 +42,11 @@
                             <?php if ($p['markdown_percent'] > 0): ?>
                                 <div style="position:absolute;top:8px;left:8px;background:#DC2626;color:#fff;font-size:10px;font-weight:600;padding:3px 7px;border-radius:5px">Markdown −<?= (int) $p['markdown_percent'] ?>%</div>
                             <?php endif; ?>
-                            <div style="height:96px;background:#E2E8F0;display:grid;place-items:center;color:#94A3B8;font-size:10.5px">รูปสินค้า</div>
+                            <?php if (!empty($p['image_path'])): ?>
+                                <img src="<?= APP_BASE_PATH ?>/media/product/<?= rawurlencode($p['image_path']) ?>" alt="" style="height:96px;width:100%;object-fit:cover;display:block">
+                            <?php else: ?>
+                                <div style="height:96px;background:#E2E8F0;display:grid;place-items:center;color:#94A3B8;font-size:28px"><?= \App\Services\View::e($p['image_note'] ?? '') ?: '📦' ?></div>
+                            <?php endif; ?>
                             <div style="padding:9px 10px">
                                 <div style="font-size:12.5px;font-weight:600;line-height:1.35"><?= \App\Services\View::e($p['name']) ?></div>
                                 <div class="mono" style="font-size:13px;color:#1E40AF;margin-top:4px"><?= \App\Services\View::money((float) $p['base_price']) ?></div>
