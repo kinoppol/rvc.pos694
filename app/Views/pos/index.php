@@ -38,7 +38,7 @@
 
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
                     <?php foreach ($products as $p): ?>
-                        <div class="card" style="overflow:hidden;position:relative">
+                        <div class="card" style="overflow:hidden;position:relative;display:flex;flex-direction:column">
                             <?php if ($p['markdown_percent'] > 0): ?>
                                 <div style="position:absolute;top:8px;left:8px;background:#DC2626;color:#fff;font-size:10px;font-weight:600;padding:3px 7px;border-radius:5px">Markdown −<?= (int) $p['markdown_percent'] ?>%</div>
                             <?php endif; ?>
@@ -47,7 +47,7 @@
                             <?php else: ?>
                                 <div style="height:96px;background:#E2E8F0;display:grid;place-items:center;color:#94A3B8;font-size:28px"><?= \App\Services\View::e($p['image_note'] ?? '') ?: '📦' ?></div>
                             <?php endif; ?>
-                            <div style="padding:9px 10px">
+                            <div style="padding:9px 10px;display:flex;flex-direction:column;flex:1">
                                 <div style="font-size:12.5px;font-weight:600;line-height:1.35"><?= \App\Services\View::e($p['name']) ?></div>
                                 <div class="mono" style="font-size:13px;color:#1E40AF;margin-top:4px"><?= \App\Services\View::money((float) $p['base_price']) ?></div>
                                 <div class="text-muted" style="font-size:10.5px;margin-top:2px">
@@ -58,7 +58,7 @@
                                         · <span style="color:#059669;font-weight:600">ขายได้ไม่จำกัด</span>
                                     <?php endif; ?>
                                 </div>
-                                <div style="display:grid;gap:6px;margin-top:9px">
+                                <div style="display:grid;gap:6px;margin-top:auto;padding-top:9px">
                                     <?php foreach ($p['variants'] as $v):
                                         $vlabel = trim(($v['color'] ?? '') . ' / ' . ($v['size'] ?? ''), ' /');
                                         $out = $trackStock && (int) $v['qty'] <= 0; ?>
