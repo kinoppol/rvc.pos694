@@ -85,6 +85,7 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
         $router->post('/store', [$store, 'updateProfile']);
         $router->post('/store/join-code', [$store, 'regenerateJoinCode']);
         $router->post('/store/join-code/disable', [$store, 'disableJoinCode']);
+        $router->post('/store/join', [$store, 'joinGroup']);
         $router->post('/store/branches', [$store, 'branchStore']);
         $router->post('/store/branches/{id}', [$store, 'branchUpdate']);
         $router->post('/store/branches/{id}/delete', [$store, 'branchDelete']);
