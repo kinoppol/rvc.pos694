@@ -105,6 +105,22 @@ $branchFields = function (array $b = []) use ($e) {
                 <?php endif; ?>
             </div>
 
+            <details class="card" style="padding:20px;display:grid;gap:12px">
+                <summary style="cursor:pointer;font-size:14px;font-weight:600">เข้าร่วมเป็นสาขาของร้านอื่น</summary>
+                <div class="text-muted" style="font-size:12px;line-height:1.7;margin-top:6px">
+                    ถ้าคุณได้รับ "รหัสเข้าร่วมร้าน" จากร้านสำนักงานใหญ่ กรอกด้านล่างเพื่อยุบร้านนี้เข้าไปเป็นสาขาหนึ่งของร้านนั้น
+                    <div style="margin-top:8px;padding:10px 12px;background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;color:#92400E">
+                        <b>คำเตือน:</b> สาขา สินค้า สมาชิก ยอดขาย และพนักงานทั้งหมดของร้านนี้จะถูกย้ายไปอยู่ภายใต้ร้านปลายทาง
+                        บัญชีเจ้าของร้านนี้จะกลายเป็น "ผู้จัดการ" และคุณต้องเข้าสู่ระบบใหม่ — <b>ทำแล้วย้อนกลับไม่ได้</b>
+                    </div>
+                </div>
+                <form method="post" action="<?= APP_BASE_PATH ?>/store/join" class="flex gap-8" style="align-items:flex-start;flex-wrap:wrap;margin-top:4px"
+                      onsubmit="return confirm('ยืนยันยุบร้านนี้เข้าเป็นสาขาของร้านอื่น? การกระทำนี้ย้อนกลับไม่ได้')">
+                    <input name="join_code" required placeholder="รหัสเข้าร่วมร้าน เช่น ABCD-EFGH" class="mono" style="height:40px;text-transform:uppercase;flex:1;min-width:220px;font-weight:400">
+                    <button class="btn btn-outline" type="submit" style="height:40px;padding:0 16px;font-size:12.5px;color:#B45309;border-color:#FCD34D">เข้าร่วม</button>
+                </form>
+            </details>
+
             <div class="card" style="padding:20px;display:grid;gap:14px">
                 <div style="font-size:14px;font-weight:600">สาขา (<?= count($branches) ?>)</div>
                 <?php foreach ($branches as $b): ?>

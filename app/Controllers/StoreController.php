@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\AuthService;
+use App\Services\CartService;
 use App\Services\Database;
 use App\Services\View;
 use PDO;
@@ -67,6 +68,83 @@ class StoreController
 
         $_SESSION['flash'] = 'ปิดรหัสเข้าร่วมกลุ่มสาขาแล้ว — ไม่มีใครเข้าร่วมด้วยรหัสเดิมได้อีก';
         header('Location: ' . APP_BASE_PATH . '/store');
+        exit;
+    }
+
+    /**
+     * Dissolve this merchant into another one identified by its join code: every
+     * branch / user / product / member / sale of this merchant is re-parented to
+     * the target, this merchant's owner(s) become managers, and the now-empty
+     * merchant row is deleted. Irreversible; the session is dropped afterwards
+     * because it points at a merchant that no longer exists.
+     */
+    public function joinGroup(array $args): void
+    {
+        $user = AuthService::currentUser();
+        $db = Database::connection();
+        $sourceId = (int) $user['merchant_id'];
+        $code = strtoupper(trim($_POST['join_code'] ?? ''));
+
+        if ($code === '') {
+            $this->back('กรุณากรอกรหัสเข้าร่วมร้าน');
+        }
+
+        $stmt = $db->prepare('SELECT id, name, status, is_platform FROM merchants WHERE join_code = ?');
+        $stmt->execute([$code]);
+        $target = $stmt->fetch();
+
+        if (!$target || (int) $target['is_platform'] === 1) {
+            $this->back('รหัสเข้าร่วมไม่ถูกต้อง หรือถูกยกเลิกไปแล้ว');
+        }
+        if ((int) $target['id'] === $sourceId) {
+            $this->back('นี่คือรหัสเข้าร่วมของร้านคุณเอง');
+        }
+        if ($target['status'] === 'suspended') {
+            $this->back('ร้านปลายทางถูกระงับการใช้งานอยู่');
+        }
+
+        $srcStmt = $db->prepare('SELECT is_platform FROM merchants WHERE id = ?');
+        $srcStmt->execute([$sourceId]);
+        if ((int) $srcStmt->fetchColumn() === 1) {
+            $this->back('ร้านระบบไม่สามารถเข้าร่วมกลุ่มได้');
+        }
+
+        $targetId = (int) $target['id'];
+
+        try {
+            $db->beginTransaction();
+
+            // coupons are unique per (merchant_id, code) — rename any that would collide
+            $db->prepare("UPDATE coupons c
+                    JOIN coupons t ON t.merchant_id = ? AND t.code = c.code
+                    SET c.code = CONCAT(LEFT(c.code, 22), '-', c.id)
+                    WHERE c.merchant_id = ?")
+               ->execute([$targetId, $sourceId]);
+
+            foreach (['branches', 'categories', 'products', 'stock_transfers', 'member_tiers', 'members', 'coupons', 'sales'] as $t) {
+                $db->prepare("UPDATE `$t` SET merchant_id = ? WHERE merchant_id = ?")->execute([$targetId, $sourceId]);
+            }
+            $db->prepare("UPDATE users SET merchant_id = ?, role = IF(role = 'owner', 'manager', role) WHERE merchant_id = ?")
+               ->execute([$targetId, $sourceId]);
+
+            $db->prepare('DELETE FROM merchants WHERE id = ?')->execute([$sourceId]);
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            $this->back('เข้าร่วมไม่สำเร็จ: ' . $e->getMessage());
+        }
+
+        // the session references a merchant that no longer exists — drop it
+        CartService::clear();
+        session_regenerate_id(true);
+        foreach (['user_id', 'merchant_id', 'branch_id', 'role', 'full_name', 'is_platform', 'impersonator'] as $k) {
+            unset($_SESSION[$k]);
+        }
+        $_SESSION['register_flash'] = 'ร้านของคุณเข้าร่วมเป็นสาขาของ "' . $target['name'] . '" แล้ว กรุณาเข้าสู่ระบบอีกครั้ง';
+        header('Location: ' . APP_BASE_PATH . '/login');
         exit;
     }
 
