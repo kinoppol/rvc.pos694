@@ -20,15 +20,22 @@
 
         <form method="post" action="<?= APP_BASE_PATH ?>/register" class="form-row">
 
-            <div style="font-size:11px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;margin-top:4px">ข้อมูลร้านค้า</div>
+            <label style="background:#F1F5F9;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12.5px">รหัสเข้าร่วมกลุ่มสาขา (ถ้ามี)
+                <input name="join_code" value="<?= \App\Services\View::e($old['join_code'] ?? '') ?>" placeholder="กรอกเมื่อได้รับรหัสจากร้านสำนักงานใหญ่" style="text-transform:uppercase" class="mono" oninput="toggleJoin()">
+                <span class="text-muted" style="font-size:11px;display:block;margin-top:3px">มีรหัส = สมัครเข้าเป็น "สาขา" ของร้านที่มีอยู่แล้ว โดยคุณจะเป็นผู้จัดการสาขานั้น</span>
+                <?php if (!empty($errors['join_code'])): ?><span class="text-muted" style="font-size:11.5px;color:#DC2626"><?= \App\Services\View::e($errors['join_code']) ?></span><?php endif; ?>
+            </label>
 
-            <label>ชื่อร้านค้า <span style="color:#DC2626">*</span>
+            <div id="join-title" style="font-size:11px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;margin-top:4px">ข้อมูลร้านค้า</div>
+
+            <label id="shop-name-row">ชื่อร้านค้า <span style="color:#DC2626">*</span>
                 <input name="shop_name" value="<?= \App\Services\View::e($old['shop_name'] ?? '') ?>" required autofocus placeholder="เช่น ร้านเสื้อผ้า ABC">
                 <?php if (!empty($errors['shop_name'])): ?><span class="text-muted" style="font-size:11.5px;color:#DC2626"><?= \App\Services\View::e($errors['shop_name']) ?></span><?php endif; ?>
             </label>
 
-            <label>ชื่อสาขาแรก
+            <label><span id="branch-name-label">ชื่อสาขาแรก</span>
                 <input name="branch_name" value="<?= \App\Services\View::e($old['branch_name'] ?? '') ?>" placeholder="สาขาหลัก (ไม่กรอก = ใช้ค่านี้)">
+                <?php if (!empty($errors['branch_name'])): ?><span class="text-muted" style="font-size:11.5px;color:#DC2626"><?= \App\Services\View::e($errors['branch_name']) ?></span><?php endif; ?>
             </label>
 
             <label>ที่อยู่สาขา
@@ -63,5 +70,17 @@
         </p>
     </div>
 </div>
+<script>
+function toggleJoin() {
+    var joining = document.querySelector('[name=join_code]').value.trim() !== '';
+    var shopRow = document.getElementById('shop-name-row');
+    var shopInput = document.querySelector('[name=shop_name]');
+    shopRow.style.display = joining ? 'none' : '';
+    shopInput.required = !joining;
+    document.getElementById('join-title').textContent = joining ? 'ข้อมูลสาขาของคุณ' : 'ข้อมูลร้านค้า';
+    document.getElementById('branch-name-label').textContent = joining ? 'ชื่อสาขาของคุณ *' : 'ชื่อสาขาแรก';
+}
+toggleJoin();
+</script>
 </body>
 </html>
