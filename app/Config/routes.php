@@ -103,6 +103,7 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
 
         $adm = new AdminMerchantController();
         $router->get('/admin/merchants', [$adm, 'index']);
+        $router->get('/admin/merchants/{id}', [$adm, 'show']);
         $router->post('/admin/merchants/{id}/approve', [$adm, 'approve']);
         $router->post('/admin/merchants/{id}/suspend', [$adm, 'suspend']);
         $router->post('/admin/merchants/{id}/impersonate', [$adm, 'impersonate']);
