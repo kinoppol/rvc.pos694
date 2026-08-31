@@ -2,7 +2,7 @@
 $e = fn ($v) => \App\Services\View::e((string) $v);
 $money = fn ($v) => \App\Services\View::money((float) $v);
 $roleLabel = ['owner' => 'เจ้าของ', 'manager' => 'ผู้จัดการ', 'cashier' => 'แคชเชียร์', 'staff' => 'พนักงาน'];
-$maxRevenue = max(1, ...array_map(fn ($a) => $a['revenue'], $activity));
+$maxRevenue = max(1, ...array_values(array_map(fn ($a) => $a['revenue'], $activity)));
 $statusBadge = [
     'pending'   => ['รอการอนุมัติ', '#FEF3C7', '#92400E'],
     'active'    => ['ใช้งานได้', '#ECFDF5', '#047857'],
