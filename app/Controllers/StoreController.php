@@ -38,6 +38,38 @@ class StoreController
         ]);
     }
 
+    /**
+     * Create (or replace) the store-group join code. Sharing it lets a manager of
+     * another shop register that shop as a branch of this merchant; regenerating
+     * invalidates the old code and stops further joins with it.
+     */
+    public function regenerateJoinCode(array $args): void
+    {
+        $user = AuthService::currentUser();
+        $db = Database::connection();
+
+        $code = $this->generateJoinCode($db);
+        $db->prepare('UPDATE merchants SET join_code = ? WHERE id = ?')
+           ->execute([$code, $user['merchant_id']]);
+
+        $_SESSION['flash'] = 'สร้างรหัสเข้าร่วมกลุ่มสาขาใหม่: ' . $code;
+        header('Location: ' . APP_BASE_PATH . '/store');
+        exit;
+    }
+
+    public function disableJoinCode(array $args): void
+    {
+        $user = AuthService::currentUser();
+        $db = Database::connection();
+
+        $db->prepare('UPDATE merchants SET join_code = NULL WHERE id = ?')
+           ->execute([$user['merchant_id']]);
+
+        $_SESSION['flash'] = 'ปิดรหัสเข้าร่วมกลุ่มสาขาแล้ว — ไม่มีใครเข้าร่วมด้วยรหัสเดิมได้อีก';
+        header('Location: ' . APP_BASE_PATH . '/store');
+        exit;
+    }
+
     public function updateProfile(array $args): void
     {
         $user = AuthService::currentUser();
@@ -162,6 +194,23 @@ class StoreController
         }
 
         return compact('name', 'address', 'lat', 'lng', 'radius');
+    }
+
+    /** 8 chars from an unambiguous alphabet, grouped XXXX-XXXX, guaranteed unique. */
+    private function generateJoinCode(PDO $db): string
+    {
+        $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no I/L/O/0/1
+        $check = $db->prepare('SELECT 1 FROM merchants WHERE join_code = ?');
+        do {
+            $raw = '';
+            for ($i = 0; $i < 8; $i++) {
+                $raw .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+            }
+            $code = substr($raw, 0, 4) . '-' . substr($raw, 4, 4);
+            $check->execute([$code]);
+        } while ($check->fetchColumn());
+
+        return $code;
     }
 
     private function branchBelongsToMerchant(PDO $db, int $branchId, int $merchantId): bool

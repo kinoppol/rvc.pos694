@@ -8,9 +8,12 @@
     <?php \App\Services\View::render('layout/sidebar', ['active' => 'pos', 'user' => $user]); ?>
     <div class="main-area">
         <div class="topbar">
-            <div class="flex gap-8" style="align-items:center;padding:7px 12px;border:1px solid #CBD5E1;border-radius:8px;background:#F8FAFC">
+            <div class="flex gap-10" style="align-items:center;padding:6px 14px;border:1px solid #CBD5E1;border-radius:8px;background:#F8FAFC">
+                <span style="font-size:13px;font-weight:700"><?= \App\Services\View::e($merchant['name'] ?? '-') ?></span>
+                <span style="width:4px;height:4px;border-radius:50%;background:#CBD5E1;display:inline-block"></span>
                 <span class="text-muted" style="font-size:11px">สาขา</span>
                 <span style="font-size:13px;font-weight:600"><?= \App\Services\View::e($branch['name'] ?? '-') ?></span>
+                <span class="mono text-muted" style="font-size:11px;padding-left:8px;border-left:1px solid #E2E8F0">รหัสร้าน #<?= str_pad((string) ($merchant['id'] ?? 0), 4, '0', STR_PAD_LEFT) ?></span>
             </div>
             <div class="flex gap-8" style="align-items:center;font-size:12px;color:#059669;font-weight:500">
                 <span style="width:7px;height:7px;border-radius:50%;background:#10B981;display:inline-block"></span>ออนไลน์

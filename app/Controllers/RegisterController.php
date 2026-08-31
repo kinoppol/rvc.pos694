@@ -32,11 +32,19 @@ class RegisterController
             'email'          => trim($_POST['email'] ?? ''),
             'branch_name'    => trim($_POST['branch_name'] ?? ''),
             'branch_address' => trim($_POST['branch_address'] ?? ''),
+            'join_code'      => strtoupper(trim($_POST['join_code'] ?? '')),
         ];
         $password = (string) ($_POST['password'] ?? '');
+        $joining = $old['join_code'] !== '';
         $errors = [];
 
-        if ($old['shop_name'] === '') {
+        if ($joining) {
+            // joining an existing merchant as an extra branch — the branch name is
+            // what identifies this shop, the group name comes from the HQ merchant
+            if ($old['branch_name'] === '') {
+                $errors['branch_name'] = 'กรุณาระบุชื่อสาขาของคุณ';
+            }
+        } elseif ($old['shop_name'] === '') {
             $errors['shop_name'] = 'กรุณาระบุชื่อร้านค้า';
         }
         if ($old['username'] === '') {
@@ -47,7 +55,7 @@ class RegisterController
         if (strlen($password) < 8) {
             $errors['password'] = 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
         }
-        if ($old['branch_name'] === '') {
+        if (!$joining && $old['branch_name'] === '') {
             $old['branch_name'] = 'สาขาหลัก';
         }
 
@@ -66,6 +74,17 @@ class RegisterController
                 $errors['username'] = 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว';
                 View::render('register/index', compact('errors', 'old'));
                 return;
+            }
+
+            if ($joining) {
+                $joinFlash = $this->joinExistingMerchant($db, $old, $password, $errors);
+                if ($joinFlash === null) {
+                    View::render('register/index', compact('errors', 'old'));
+                    return;
+                }
+                $_SESSION['register_flash'] = $joinFlash;
+                header('Location: ' . APP_BASE_PATH . '/login');
+                exit;
             }
 
             // read require_approval setting (graceful fallback if table not yet migrated)
@@ -111,5 +130,42 @@ class RegisterController
         }
         header('Location: ' . APP_BASE_PATH . '/login');
         exit;
+    }
+
+    /**
+     * Register the applicant as a branch manager of the merchant that owns the
+     * given join code, adding their shop as a new branch. Returns the login-page
+     * flash message on success, or null after populating $errors on failure.
+     */
+    private function joinExistingMerchant(\PDO $db, array $old, string $password, array &$errors): ?string
+    {
+        $stmt = $db->prepare('SELECT id, name, status FROM merchants WHERE join_code = ? AND is_platform = 0');
+        $stmt->execute([$old['join_code']]);
+        $merchant = $stmt->fetch();
+
+        if (!$merchant) {
+            $errors['join_code'] = 'รหัสเข้าร่วมไม่ถูกต้อง หรือถูกยกเลิกไปแล้ว';
+            return null;
+        }
+        if ($merchant['status'] === 'suspended') {
+            $errors['join_code'] = 'ร้านสำนักงานใหญ่ถูกระงับการใช้งานอยู่';
+            return null;
+        }
+
+        $merchantId = (int) $merchant['id'];
+        $ownerName = $old['owner_name'] !== '' ? $old['owner_name'] : $old['username'];
+
+        $db->beginTransaction();
+
+        $db->prepare('INSERT INTO branches (merchant_id, name, address, lat, lng, geofence_radius_m) VALUES (?, ?, ?, 13.8221, 100.5610, 50)')
+           ->execute([$merchantId, $old['branch_name'], $old['branch_address']]);
+        $branchId = (int) $db->lastInsertId();
+
+        $db->prepare('INSERT INTO users (merchant_id, branch_id, username, email, full_name, password_hash, role, active) VALUES (?, ?, ?, ?, ?, ?, \'manager\', 1)')
+           ->execute([$merchantId, $branchId, $old['username'], $old['email'] ?: null, $ownerName, AuthService::hashPassword($password)]);
+
+        $db->commit();
+
+        return 'เข้าร่วมเป็นสาขาของ "' . $merchant['name'] . '" สำเร็จ! กรุณาเข้าสู่ระบบ';
     }
 }

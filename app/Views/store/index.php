@@ -78,6 +78,33 @@ $branchFields = function (array $b = []) use ($e) {
                 <div><button class="btn btn-primary" type="submit" style="height:42px;padding:0 22px">บันทึกข้อมูลร้านค้า</button></div>
             </form>
 
+            <div class="card" style="padding:20px;display:grid;gap:12px">
+                <div style="font-size:14px;font-weight:600">รหัสเข้าร่วมกลุ่มสาขา</div>
+                <div class="text-muted" style="font-size:12px;line-height:1.6">
+                    ส่งรหัสนี้ให้ผู้จัดการของอีกร้านหนึ่งเพื่อให้เขาไปกรอกตอน<a href="<?= APP_BASE_PATH ?>/register" target="_blank" rel="noopener" style="color:#1E40AF;font-weight:600">สมัครใช้งาน</a>
+                    ร้านของเขาจะกลายเป็น "สาขา" ของร้านนี้ และเขาจะเป็นผู้จัดการของสาขานั้น
+                </div>
+                <?php if (!empty($merchant['join_code'])): ?>
+                    <div class="flex gap-8" style="align-items:center;flex-wrap:wrap">
+                        <span class="mono" style="font-size:20px;font-weight:700;letter-spacing:2px;background:#F1F5F9;border:1px solid var(--border);border-radius:8px;padding:8px 16px"><?= $e($merchant['join_code']) ?></span>
+                        <form method="post" action="<?= APP_BASE_PATH ?>/store/join-code"
+                              onsubmit="return confirm('สร้างรหัสใหม่? รหัสเดิมจะใช้ไม่ได้อีก')">
+                            <button class="btn btn-outline" type="submit" style="height:36px;padding:0 14px;font-size:12.5px">สร้างรหัสใหม่</button>
+                        </form>
+                        <form method="post" action="<?= APP_BASE_PATH ?>/store/join-code/disable"
+                              onsubmit="return confirm('ปิดรหัสเข้าร่วม? จะไม่มีใครเข้าร่วมด้วยรหัสนี้ได้อีก')">
+                            <button class="btn btn-outline" type="submit" style="height:36px;padding:0 14px;font-size:12.5px;color:#DC2626;border-color:#FECACA">ปิดรหัส</button>
+                        </form>
+                    </div>
+                <?php else: ?>
+                    <div>
+                        <form method="post" action="<?= APP_BASE_PATH ?>/store/join-code">
+                            <button class="btn btn-primary" type="submit" style="height:38px;padding:0 18px;font-size:12.5px">สร้างรหัสเข้าร่วม</button>
+                        </form>
+                    </div>
+                <?php endif; ?>
+            </div>
+
             <div class="card" style="padding:20px;display:grid;gap:14px">
                 <div style="font-size:14px;font-weight:600">สาขา (<?= count($branches) ?>)</div>
                 <?php foreach ($branches as $b): ?>
