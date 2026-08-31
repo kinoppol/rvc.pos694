@@ -9,7 +9,6 @@ $items = [
     'products'   => ['สินค้า',    '/products'],
     'staff'      => ['พนักงาน',  '/staff'],
     'store'      => ['ร้านค้า & สาขา', '/store'],
-    'migrations' => ['Migrations', '/admin/migrations'],
 ];
 $isPlatformAdmin = ($user['is_platform'] ?? false) && ($user['role'] ?? '') === 'owner';
 
@@ -26,7 +25,6 @@ if ($isPlatformAdmin) {
 <div class="sidebar">
     <div class="logo">POS</div>
     <?php foreach ($items as $key => [$label, $href]):
-        if ($key === 'migrations' && ($user['role'] ?? '') !== 'owner') continue;
         if (in_array($key, ['staff', 'products'], true) && !in_array($user['role'] ?? '', ['owner', 'manager'], true)) continue;
         if ($key === 'store' && ($user['role'] ?? '') !== 'owner') continue;
     ?>
@@ -42,6 +40,7 @@ if ($isPlatformAdmin) {
             <?php endif; ?>
         </a>
         <a class="nav-item<?= $active === 'admin_settings' ? ' active' : '' ?>" href="<?= APP_BASE_PATH ?>/admin/settings">ตั้งค่าระบบ</a>
+        <a class="nav-item<?= $active === 'migrations' ? ' active' : '' ?>" href="<?= APP_BASE_PATH ?>/admin/migrations">Migrations</a>
     <?php endif; ?>
 
     <div class="spacer"></div>

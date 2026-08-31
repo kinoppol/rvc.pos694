@@ -89,13 +89,14 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
         $router->post('/store/branches/{id}', [$store, 'branchUpdate']);
         $router->post('/store/branches/{id}/delete', [$store, 'branchDelete']);
 
+    });
+
+    $router->group([PlatformAdminMiddleware::handle()], function (Router $router) {
         $mig = new MigrationController();
         $router->get('/admin/migrations', [$mig, 'index']);
         $router->post('/admin/migrations/run', [$mig, 'run']);
         $router->post('/admin/migrations/rollback', [$mig, 'rollback']);
-    });
 
-    $router->group([PlatformAdminMiddleware::handle()], function (Router $router) {
         $adm = new AdminMerchantController();
         $router->get('/admin/merchants', [$adm, 'index']);
         $router->post('/admin/merchants/{id}/approve', [$adm, 'approve']);
