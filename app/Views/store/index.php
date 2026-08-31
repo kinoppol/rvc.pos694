@@ -75,6 +75,12 @@ $branchFields = function (array $b = []) use ($e) {
                 <label style="display:grid;gap:5px;font-size:12.5px;font-weight:600">ที่อยู่ร้าน
                     <input type="text" name="address" value="<?= $e($merchant['address'] ?? '') ?>" style="height:42px;font-weight:400">
                 </label>
+                <label style="display:flex;gap:10px;align-items:flex-start;font-size:12.5px;font-weight:600;padding:12px 14px;border:1px solid var(--border);border-radius:9px;background:var(--bg-lighter)">
+                    <input type="checkbox" name="track_stock" value="1" <?= (int) ($merchant['track_stock'] ?? 1) === 1 ? 'checked' : '' ?> style="margin-top:2px">
+                    <span>นับสต็อกสินค้า
+                        <span class="text-muted" style="display:block;font-weight:400;font-size:11.5px;margin-top:2px">เอาเครื่องหมายออก = ขายได้โดยไม่สนใจจำนวนคงเหลือ (ไม่ล็อกเมื่อสต็อกหมด และไม่ตัดสต็อกตอนชำระเงิน)</span>
+                    </span>
+                </label>
                 <div><button class="btn btn-primary" type="submit" style="height:42px;padding:0 22px">บันทึกข้อมูลร้านค้า</button></div>
             </form>
 

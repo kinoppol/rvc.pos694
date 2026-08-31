@@ -50,11 +50,28 @@
                             <div style="padding:9px 10px">
                                 <div style="font-size:12.5px;font-weight:600;line-height:1.35"><?= \App\Services\View::e($p['name']) ?></div>
                                 <div class="mono" style="font-size:13px;color:#1E40AF;margin-top:4px"><?= \App\Services\View::money((float) $p['base_price']) ?></div>
-                                <div class="text-muted" style="font-size:10.5px;margin-top:2px"><?= count($p['variants']) ?> Variant · คงเหลือ <?= (int) $p['total_stock'] ?></div>
-                                <div class="flex gap-8" style="flex-wrap:wrap;margin-top:8px">
-                                    <?php foreach ($p['variants'] as $v): ?>
-                                        <button type="button" class="chip variant-btn" data-variant="<?= $v['id'] ?>" style="font-size:11px;padding:4px 9px" <?= $v['qty'] <= 0 ? 'disabled title="หมดสต็อก"' : '' ?>>
-                                            <?= \App\Services\View::e(trim(($v['color'] ?? '') . '/' . ($v['size'] ?? ''), '/')) ?> (<?= (int) $v['qty'] ?>)
+                                <div class="text-muted" style="font-size:10.5px;margin-top:2px">
+                                    <?= count($p['variants']) ?> ตัวเลือก
+                                    <?php if ($trackStock): ?>
+                                        · คงเหลือรวม <?= (int) $p['total_stock'] ?>
+                                    <?php else: ?>
+                                        · <span style="color:#059669;font-weight:600">ขายได้ไม่จำกัด</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div style="display:grid;gap:6px;margin-top:9px">
+                                    <?php foreach ($p['variants'] as $v):
+                                        $vlabel = trim(($v['color'] ?? '') . ' / ' . ($v['size'] ?? ''), ' /');
+                                        $out = $trackStock && (int) $v['qty'] <= 0; ?>
+                                        <button type="button" class="btn <?= $out ? 'btn-outline' : 'btn-primary' ?> variant-btn"
+                                                data-variant="<?= $v['id'] ?>"
+                                                style="height:34px;padding:0 10px;font-size:12px;width:100%;justify-content:space-between;gap:6px<?= $out ? ';opacity:.5' : '' ?>"
+                                                <?= $out ? 'disabled title="หมดสต็อก"' : '' ?>>
+                                            <span style="display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">
+                                                <span style="font-size:13px">🛒</span><?= $vlabel !== '' ? \App\Services\View::e($vlabel) : 'หยิบใส่ตะกร้า' ?>
+                                            </span>
+                                            <?php if ($trackStock): ?>
+                                                <span style="font-size:10.5px;<?= $out ? '' : 'background:rgba(255,255,255,.22);' ?>padding:1px 7px;border-radius:9px;flex:none"><?= (int) $v['qty'] ?></span>
+                                            <?php endif; ?>
                                         </button>
                                     <?php endforeach; ?>
                                 </div>
