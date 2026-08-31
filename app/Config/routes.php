@@ -5,6 +5,7 @@ use App\Controllers\AdminMerchantController;
 use App\Controllers\AttendanceController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
+use App\Controllers\MediaController;
 use App\Controllers\MemberController;
 use App\Controllers\MigrationController;
 use App\Controllers\PaymentController;
@@ -32,6 +33,8 @@ $router->get('/register', [new RegisterController(), 'show']);
 $router->post('/register', [new RegisterController(), 'store']);
 
 $router->group([AuthMiddleware::handle()], function (Router $router) {
+    $router->get('/media/product/{file}', [new MediaController(), 'productImage']);
+
     $pos = new PosController();
     $router->get('/pos', [$pos, 'index']);
     $router->get('/pos/search', [$pos, 'search']);

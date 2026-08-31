@@ -54,7 +54,16 @@
                     <tbody>
                     <?php foreach ($products as $p): ?>
                         <tr style="border-top:1px solid var(--border)">
-                            <td style="padding:10px 14px;font-weight:600"><?= $e($p['name']) ?></td>
+                            <td style="padding:8px 14px;font-weight:600">
+                                <div class="flex gap-10" style="align-items:center">
+                                    <?php if (!empty($p['image_path'])): ?>
+                                        <img src="<?= APP_BASE_PATH ?>/media/product/<?= rawurlencode($p['image_path']) ?>" alt="" style="width:38px;height:38px;object-fit:cover;border-radius:7px;border:1px solid var(--border);flex:none">
+                                    <?php else: ?>
+                                        <span style="width:38px;height:38px;border-radius:7px;background:var(--bg-lighter);display:grid;place-items:center;flex:none;font-size:17px"><?= $e($p['image_note'] ?? '') ?: '📦' ?></span>
+                                    <?php endif; ?>
+                                    <span><?= $e($p['name']) ?></span>
+                                </div>
+                            </td>
                             <td class="text-muted"><?= $e($p['category_name'] ?? '-') ?></td>
                             <td class="mono" style="text-align:right"><?= \App\Services\View::money((float) $p['base_price']) ?></td>
                             <td class="mono text-muted" style="text-align:right"><?= \App\Services\View::money((float) $p['cost_price']) ?></td>
