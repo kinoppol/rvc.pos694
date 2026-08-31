@@ -68,12 +68,17 @@ $img = fn ($file) => APP_BASE_PATH . '/media/product/' . rawurlencode((string) $
                     <div style="display:grid;gap:8px;font-size:12.5px;font-weight:600">รูปภาพสินค้า
                         <div class="flex gap-12" style="align-items:center;flex-wrap:wrap">
                             <?php if (!empty($product['image_path'])): ?>
-                                <img src="<?= $img($product['image_path']) ?>" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+                                <img src="<?= $img($product['image_path']) ?>" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--border)">
                                 <label class="text-muted" style="font-size:12px;font-weight:400;display:flex;gap:6px;align-items:center">
                                     <input type="checkbox" name="remove_image" value="1"> ลบรูปนี้
                                 </label>
                             <?php endif; ?>
-                            <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif" style="font-weight:400">
+                            <label class="file-drop">
+                                <span class="fd-icon">🖼️</span>
+                                <span class="fd-label"><?= !empty($product['image_path']) ? 'เปลี่ยนรูป' : 'เลือกรูป' ?></span>
+                                <span class="fd-name">ยังไม่ได้เลือกไฟล์</span>
+                                <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif">
+                            </label>
                         </div>
                         <span class="text-muted" style="font-size:11px;font-weight:400">JPG / PNG / WebP / GIF ไม่เกิน 2 MB</span>
                     </div>
@@ -104,11 +109,17 @@ $img = fn ($file) => APP_BASE_PATH . '/media/product/' . rawurlencode((string) $
                                     <td><input type="text" name="variants[<?= $i ?>][sku]" value="<?= $e($v['sku']) ?>" class="mono" style="height:36px;width:140px"></td>
                                     <td><input type="text" name="variants[<?= $i ?>][barcode]" value="<?= $e($v['barcode']) ?>" class="mono" style="height:36px;width:140px"></td>
                                     <td>
-                                        <?php if (!empty($v['image_path'])): ?>
-                                            <img src="<?= $img($v['image_path']) ?>" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block;margin-bottom:3px">
-                                            <label style="font-size:10px;display:flex;gap:3px;align-items:center"><input type="checkbox" name="variants[<?= $i ?>][remove_image]" value="1">ลบรูป</label>
-                                        <?php endif; ?>
-                                        <input type="file" name="variant_image[<?= $i ?>]" accept="image/jpeg,image/png,image/webp,image/gif" style="width:150px;font-size:11px">
+                                        <div class="flex" style="align-items:center;gap:6px">
+                                            <?php if (!empty($v['image_path'])): ?>
+                                                <img src="<?= $img($v['image_path']) ?>" alt="" style="width:38px;height:38px;object-fit:cover;border-radius:7px;border:1px solid var(--border);flex:none">
+                                                <label style="font-size:10px;display:flex;gap:3px;align-items:center"><input type="checkbox" name="variants[<?= $i ?>][remove_image]" value="1">ลบ</label>
+                                            <?php endif; ?>
+                                            <label class="file-drop sm">
+                                                <span class="fd-icon">🖼️</span>
+                                                <span class="fd-name">แนบรูป</span>
+                                                <input type="file" name="variant_image[<?= $i ?>]" accept="image/jpeg,image/png,image/webp,image/gif">
+                                            </label>
+                                        </div>
                                     </td>
                                     <td style="text-align:right"><input type="number" step="0.01" min="0" name="variants[<?= $i ?>][price_override]" value="<?= $v['price_override'] !== null ? $e($v['price_override']) : '' ?>" placeholder="ใช้ราคาหลัก" class="mono" style="height:36px;width:120px;text-align:right"></td>
                                     <td style="text-align:right"><input type="number" name="variants[<?= $i ?>][qty]" value="<?= (int) $v['qty'] ?>" class="mono" style="height:36px;width:90px;text-align:right"></td>
@@ -150,7 +161,8 @@ function addVariantRow() {
         '<td><input type="text" name="variants[' + i + '][color]" style="height:36px;width:110px"></td>' +
         '<td><input type="text" name="variants[' + i + '][sku]" class="mono" placeholder="อัตโนมัติ" style="height:36px;width:140px"></td>' +
         '<td><input type="text" name="variants[' + i + '][barcode]" class="mono" style="height:36px;width:140px"></td>' +
-        '<td><input type="file" name="variant_image[' + i + ']" accept="image/jpeg,image/png,image/webp,image/gif" style="width:150px;font-size:11px"></td>' +
+        '<td><label class="file-drop sm"><span class="fd-icon">🖼️</span><span class="fd-name">แนบรูป</span>' +
+        '<input type="file" name="variant_image[' + i + ']" accept="image/jpeg,image/png,image/webp,image/gif"></label></td>' +
         '<td style="text-align:right"><input type="number" step="0.01" min="0" name="variants[' + i + '][price_override]" placeholder="ใช้ราคาหลัก" class="mono" style="height:36px;width:120px;text-align:right"></td>' +
         '<td style="text-align:right"><input type="number" name="variants[' + i + '][qty]" value="0" class="mono" style="height:36px;width:90px;text-align:right"></td>' +
         '<td style="text-align:right"><input type="number" min="0" name="variants[' + i + '][reorder_point]" value="10" class="mono" style="height:36px;width:90px;text-align:right"></td>' +
@@ -158,6 +170,20 @@ function addVariantRow() {
     document.getElementById('variant-rows').appendChild(tr);
 }
 if (variantIndex === 0) addVariantRow();
+
+document.addEventListener('change', function (e) {
+    if (!e.target.matches || !e.target.matches('.file-drop input[type=file]')) return;
+    const wrap = e.target.closest('.file-drop');
+    const nameEl = wrap.querySelector('.fd-name');
+    const file = e.target.files[0];
+    if (file) {
+        nameEl.textContent = file.name;
+        wrap.classList.add('has-file');
+    } else {
+        nameEl.textContent = wrap.classList.contains('sm') ? 'แนบรูป' : 'ยังไม่ได้เลือกไฟล์';
+        wrap.classList.remove('has-file');
+    }
+});
 </script>
 </body>
 </html>
