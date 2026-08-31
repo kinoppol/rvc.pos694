@@ -12,7 +12,7 @@ use PDO;
  */
 class MerchantOverview
 {
-    /** @return array{merchant:array,branches:array,staff:array,activity:array}|null */
+    /** @return array{merchant:array,branches:array,staff:array,activity:array,topSellers:array,topProducts:array}|null */
     public static function build(PDO $db, int $merchantId): ?array
     {
         $stmt = $db->prepare("SELECT m.*,
@@ -86,6 +86,33 @@ class MerchantOverview
             // no attendance table — skip
         }
 
-        return compact('merchant', 'branches', 'staff', 'activity');
+        // เดือนนี้ — พนักงานขายทำยอดสูงสุด 3 อันดับ + สินค้าขายดี 10 รายการ
+        $monthStart = date('Y-m-01') . ' 00:00:00';
+
+        $sellerStmt = $db->prepare("SELECT u.full_name, u.username, COUNT(*) AS bills, COALESCE(SUM(s.grand_total),0) AS revenue
+            FROM sales s JOIN users u ON u.id = s.user_id
+            WHERE s.merchant_id = ? AND s.status = 'completed' AND s.created_at >= ?
+            GROUP BY s.user_id
+            ORDER BY revenue DESC, bills DESC
+            LIMIT 3");
+        $sellerStmt->execute([$merchantId, $monthStart]);
+        $topSellers = $sellerStmt->fetchAll();
+
+        $productStmt = $db->prepare("SELECT MIN(COALESCE(p.name, si.product_name_snapshot)) AS name,
+                MAX(p.image_path) AS image_path,
+                SUM(si.qty) AS qty,
+                COALESCE(SUM(si.qty * si.unit_price - si.line_discount), 0) AS revenue
+            FROM sale_items si
+            JOIN sales s ON s.id = si.sale_id
+            LEFT JOIN product_variants v ON v.id = si.variant_id
+            LEFT JOIN products p ON p.id = v.product_id
+            WHERE s.merchant_id = ? AND s.status = 'completed' AND s.created_at >= ?
+            GROUP BY COALESCE(p.id, si.product_name_snapshot)
+            ORDER BY qty DESC, revenue DESC
+            LIMIT 10");
+        $productStmt->execute([$merchantId, $monthStart]);
+        $topProducts = $productStmt->fetchAll();
+
+        return compact('merchant', 'branches', 'staff', 'activity', 'topSellers', 'topProducts');
     }
 }
