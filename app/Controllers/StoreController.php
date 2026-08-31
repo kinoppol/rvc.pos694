@@ -186,8 +186,10 @@ class StoreController
             $this->back('รูปแบบอีเมลไม่ถูกต้อง');
         }
 
-        $db->prepare('UPDATE merchants SET name = ?, tax_id = ?, phone = ?, email = ?, address = ? WHERE id = ?')
-           ->execute([$name, $taxId, $phone, $email, $address, $user['merchant_id']]);
+        $trackStock = isset($_POST['track_stock']) ? 1 : 0;
+
+        $db->prepare('UPDATE merchants SET name = ?, tax_id = ?, phone = ?, email = ?, address = ?, track_stock = ? WHERE id = ?')
+           ->execute([$name, $taxId, $phone, $email, $address, $trackStock, $user['merchant_id']]);
 
         $_SESSION['flash'] = 'บันทึกข้อมูลร้านค้าเรียบร้อย';
         header('Location: ' . APP_BASE_PATH . '/store');

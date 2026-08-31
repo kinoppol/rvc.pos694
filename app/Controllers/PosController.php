@@ -73,14 +73,15 @@ class PosController
         $branchStmt->execute([$branchId]);
         $branch = $branchStmt->fetch();
 
-        $merchantStmt = $db->prepare('SELECT id, name, join_code FROM merchants WHERE id = ?');
+        $merchantStmt = $db->prepare('SELECT * FROM merchants WHERE id = ?');
         $merchantStmt->execute([$user['merchant_id']]);
         $merchant = $merchantStmt->fetch();
+        $trackStock = (int) ($merchant['track_stock'] ?? 1) === 1;
 
         $cart = CartService::get();
         $totals = CartService::totals($db);
 
-        View::render('pos/index', compact('user', 'products', 'categories', 'category', 'q', 'branch', 'merchant', 'cart', 'totals'));
+        View::render('pos/index', compact('user', 'products', 'categories', 'category', 'q', 'branch', 'merchant', 'trackStock', 'cart', 'totals'));
     }
 
     public function search(array $args): void

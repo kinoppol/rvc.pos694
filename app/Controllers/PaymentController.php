@@ -39,6 +39,15 @@ class PaymentController
         $tendered = isset($_POST['tendered']) ? (float) $_POST['tendered'] : null;
         $branchId = $user['branch_id'] ?? (int) $db->query('SELECT id FROM branches WHERE merchant_id = ' . (int) $user['merchant_id'] . ' ORDER BY id LIMIT 1')->fetchColumn();
 
+        $trackStock = true;
+        try {
+            $mStmt = $db->prepare('SELECT track_stock FROM merchants WHERE id = ?');
+            $mStmt->execute([$user['merchant_id']]);
+            $trackStock = (int) $mStmt->fetchColumn() === 1;
+        } catch (\PDOException $e) {
+            // column not migrated yet — keep tracking
+        }
+
         $db->beginTransaction();
         try {
             $invoice = 'INV-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)) . '-' . date('ymd') . '-' . str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
@@ -53,7 +62,9 @@ class PaymentController
             $stockStmt = $db->prepare('UPDATE stock_levels SET quantity = GREATEST(0, quantity - ?) WHERE branch_id = ? AND variant_id = ?');
             foreach ($cart['items'] as $variantId => $item) {
                 $itemStmt->execute([$saleId, $variantId, $item['name'], $item['variant_label'], $item['qty'], $item['price']]);
-                $stockStmt->execute([$item['qty'], $branchId, $variantId]);
+                if ($trackStock) {
+                    $stockStmt->execute([$item['qty'], $branchId, $variantId]);
+                }
             }
 
             $change = null;

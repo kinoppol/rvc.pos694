@@ -44,7 +44,7 @@ There is no `composer install` / build / lint / test step — this is intentiona
 - Before anything touches the database, it runs `App\Services\PermissionChecker::checkAll()` — PHP version, required extensions (`pdo_mysql`, `mbstring`, `openssl`, `json`), and write-access to `app/Config/` and `storage/**`. Installation is blocked until these pass.
 - Schema is applied via `App\Services\MigrationRunner`, the **same class** the admin UI uses — install = "run every migration from zero", so the two paths can't drift apart.
 - **Admin → Migrations** (`/admin/migrations`, platform-admin only — `PlatformAdminMiddleware`) lists every file in `database/migrations/` against what's been applied, and can run pending migrations or roll back the last batch.
-- Current migrations: `0001_init_schema` (full schema), `0002_merchant_registration` (`status`/`is_platform` columns, `system_settings`), `0003_merchant_profile` (merchant phone/email/address), `0004_branch_join_code` (`merchants.join_code`), `0005_product_images` (`products.image_path` + `product_variants.image_path`).
+- Current migrations: `0001_init_schema` (full schema), `0002_merchant_registration` (`status`/`is_platform` columns, `system_settings`), `0003_merchant_profile` (merchant phone/email/address), `0004_branch_join_code` (`merchants.join_code`), `0005_product_images` (`products.image_path` + `product_variants.image_path`), `0006_merchant_stock_mode` (`merchants.track_stock`).
 - Migration files live in `database/migrations/`, named `NNNN_description.php`, each returning an anonymous object with `up(PDO $db)` / `down(PDO $db)`. **Important:** MariaDB/MySQL implicitly commits on every DDL statement, so `MigrationRunner` intentionally does *not* wrap `up()`/`down()` in an explicit PDO transaction (see the comment in [app/Services/MigrationRunner.php](app/Services/MigrationRunner.php) — wrapping DDL in `beginTransaction()`/`commit()` throws spurious "no active transaction" errors once MySQL auto-commits underneath PDO's back).
 
 ## Architecture
@@ -103,6 +103,7 @@ storage/                     # logs/, cache/, uploads/, installed.lock — must 
 - Prices are **VAT-inclusive** (7%). VAT is *derived*: `grand_total × 7 / 107` — do not add VAT on top.
 - Birthday discount: 10% off if the member's `birthdate` month equals the current month.
 - Loyalty points: 1 point per ฿100 spent (`floor(grand_total / 100)`), added to `members.points` and `members.total_spend` at payment confirmation.
+- Stock enforcement is opt-out per merchant (`merchants.track_stock`, toggled by the owner at `/store`). When `0`, the POS grid never disables an out-of-stock variant and `PaymentController` skips the `stock_levels` deduction.
 
 **Subfolder hosting:** `APP_BASE_PATH` is auto-detected from `$_SERVER['SCRIPT_NAME']` in `bootstrap.php` — the router strips it before matching. No manual config needed unless you override the constant before including `bootstrap.php`.
 
