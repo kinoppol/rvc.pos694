@@ -85,6 +85,7 @@ $router->group([AuthMiddleware::handle()], function (Router $router) {
     $router->group([RoleMiddleware::only('owner')], function (Router $router) {
         $store = new StoreController();
         $router->get('/store', [$store, 'index']);
+        $router->get('/store/overview', [$store, 'overview']);
         $router->post('/store', [$store, 'updateProfile']);
         $router->post('/store/join-code', [$store, 'regenerateJoinCode']);
         $router->post('/store/join-code/disable', [$store, 'disableJoinCode']);
