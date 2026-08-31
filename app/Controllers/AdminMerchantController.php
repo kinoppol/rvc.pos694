@@ -27,6 +27,90 @@ class AdminMerchantController
         View::render('admin/merchants', compact('user', 'merchants', 'requireApproval'));
     }
 
+    /** ภาพรวมของร้านค้าหนึ่งร้าน — สาขา พนักงาน สินค้า และกิจกรรมรายวัน (platform admin) */
+    public function show(array $args): void
+    {
+        $user = AuthService::currentUser();
+        $db = Database::connection();
+        $id = (int) $args['id'];
+
+        $stmt = $db->prepare("SELECT m.*,
+                (SELECT COUNT(*) FROM branches b WHERE b.merchant_id = m.id) AS branch_count,
+                (SELECT COUNT(*) FROM users u WHERE u.merchant_id = m.id) AS user_count,
+                (SELECT COUNT(*) FROM users u WHERE u.merchant_id = m.id AND u.active = 1) AS active_user_count,
+                (SELECT COUNT(*) FROM products p WHERE p.merchant_id = m.id) AS product_count,
+                (SELECT COUNT(*) FROM product_variants v JOIN products p ON p.id = v.product_id WHERE p.merchant_id = m.id) AS variant_count,
+                (SELECT COUNT(*) FROM members mb WHERE mb.merchant_id = m.id) AS member_count
+            FROM merchants m WHERE m.id = ? AND m.is_platform = 0");
+        $stmt->execute([$id]);
+        $merchant = $stmt->fetch();
+
+        if (!$merchant) {
+            http_response_code(404);
+            echo 'ไม่พบร้านค้า';
+            return;
+        }
+
+        $bStmt = $db->prepare("SELECT b.id, b.name, b.address,
+                (SELECT COUNT(*) FROM users u WHERE u.branch_id = b.id) AS user_count,
+                (SELECT COUNT(*) FROM sales s WHERE s.branch_id = b.id AND s.status = 'completed') AS sale_count,
+                (SELECT COALESCE(SUM(s.grand_total),0) FROM sales s WHERE s.branch_id = b.id AND s.status = 'completed') AS revenue
+            FROM branches b WHERE b.merchant_id = ? ORDER BY b.name");
+        $bStmt->execute([$id]);
+        $branches = $bStmt->fetchAll();
+
+        $staffStmt = $db->prepare("SELECT u.full_name, u.username, u.role, u.active, b.name AS branch_name
+            FROM users u LEFT JOIN branches b ON b.id = u.branch_id
+            WHERE u.merchant_id = ?
+            ORDER BY FIELD(u.role,'owner','manager','cashier','staff'), u.full_name");
+        $staffStmt->execute([$id]);
+        $staff = $staffStmt->fetchAll();
+
+        // กิจกรรมรายวัน 14 วันล่าสุด
+        $activity = [];
+        for ($d = 13; $d >= 0; $d--) {
+            $activity[date('Y-m-d', strtotime("-$d day"))] = ['bills' => 0, 'revenue' => 0.0, 'new_members' => 0, 'clock_ins' => 0];
+        }
+        $since = date('Y-m-d', strtotime('-13 day'));
+
+        $salesAgg = $db->prepare("SELECT DATE(created_at) AS d, COUNT(*) AS bills, COALESCE(SUM(grand_total),0) AS revenue
+            FROM sales WHERE merchant_id = ? AND status = 'completed' AND created_at >= ?
+            GROUP BY DATE(created_at)");
+        $salesAgg->execute([$id, $since . ' 00:00:00']);
+        foreach ($salesAgg->fetchAll() as $r) {
+            if (isset($activity[$r['d']])) {
+                $activity[$r['d']]['bills'] = (int) $r['bills'];
+                $activity[$r['d']]['revenue'] = (float) $r['revenue'];
+            }
+        }
+
+        $memAgg = $db->prepare("SELECT member_since AS d, COUNT(*) AS c FROM members
+            WHERE merchant_id = ? AND member_since >= ? GROUP BY member_since");
+        $memAgg->execute([$id, $since]);
+        foreach ($memAgg->fetchAll() as $r) {
+            if (isset($activity[$r['d']])) {
+                $activity[$r['d']]['new_members'] = (int) $r['c'];
+            }
+        }
+
+        try {
+            $attAgg = $db->prepare("SELECT DATE(a.clocked_at) AS d, COUNT(*) AS c
+                FROM attendance_logs a JOIN users u ON u.id = a.user_id
+                WHERE u.merchant_id = ? AND a.clock_type = 'in' AND a.clocked_at >= ?
+                GROUP BY DATE(a.clocked_at)");
+            $attAgg->execute([$id, $since . ' 00:00:00']);
+            foreach ($attAgg->fetchAll() as $r) {
+                if (isset($activity[$r['d']])) {
+                    $activity[$r['d']]['clock_ins'] = (int) $r['c'];
+                }
+            }
+        } catch (\PDOException $e) {
+            // ไม่มีตาราง attendance — ข้าม
+        }
+
+        View::render('admin/merchant_show', compact('user', 'merchant', 'branches', 'staff', 'activity'));
+    }
+
     public function approve(array $args): void
     {
         $id = (int) $args['id'];

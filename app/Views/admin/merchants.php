@@ -55,6 +55,7 @@
                             <td class="text-muted"><?= date('d M Y', strtotime($m['created_at'])) ?></td>
                             <td style="text-align:right;padding-right:14px">
                                 <div class="flex gap-8" style="justify-content:flex-end">
+                                    <a href="<?= APP_BASE_PATH ?>/admin/merchants/<?= $m['id'] ?>" class="btn btn-outline" style="height:32px;padding:0 12px;font-size:12px">ภาพรวม</a>
                                     <?php if ($m['status'] !== 'active'): ?>
                                         <form method="post" action="<?= APP_BASE_PATH ?>/admin/merchants/<?= $m['id'] ?>/approve">
                                             <button class="btn btn-outline" type="submit" style="height:32px;padding:0 12px;font-size:12px;color:#047857;border-color:#A7F3D0">อนุมัติ</button>
