@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Services\AuthService;
 use App\Services\CartService;
 use App\Services\Database;
+use App\Services\MerchantOverview;
 use App\Services\View;
 use PDO;
 
@@ -146,6 +147,22 @@ class StoreController
         $_SESSION['register_flash'] = 'ร้านของคุณเข้าร่วมเป็นสาขาของ "' . $target['name'] . '" แล้ว กรุณาเข้าสู่ระบบอีกครั้ง';
         header('Location: ' . APP_BASE_PATH . '/login');
         exit;
+    }
+
+    /** ภาพรวมร้านของตัวเอง — ใช้ชุดข้อมูลเดียวกับหน้า platform admin */
+    public function overview(array $args): void
+    {
+        $user = AuthService::currentUser();
+        $db = Database::connection();
+        $data = MerchantOverview::build($db, (int) $user['merchant_id']);
+
+        if (!$data) {
+            http_response_code(404);
+            echo 'ไม่พบร้านค้า';
+            return;
+        }
+
+        View::render('admin/merchant_show', ['user' => $user, 'isAdmin' => false] + $data);
     }
 
     public function updateProfile(array $args): void

@@ -90,18 +90,24 @@ $statusBadge = [
 </head>
 <body>
 <div class="app-shell">
-    <?php \App\Services\View::render('layout/sidebar', ['active' => 'admin_merchants', 'user' => $user]); ?>
+    <?php \App\Services\View::render('layout/sidebar', ['active' => $isAdmin ? 'admin_merchants' : 'overview', 'user' => $user]); ?>
     <div class="main-area">
         <div class="topbar">
-            <a href="<?= APP_BASE_PATH ?>/admin/merchants" class="btn btn-outline" style="height:34px;padding:0 14px;font-size:12.5px">← ร้านค้าทั้งหมด</a>
-            <div style="font-size:15px;font-weight:600"><?= $e($merchant['name']) ?></div>
+            <?php if ($isAdmin): ?>
+                <a href="<?= APP_BASE_PATH ?>/admin/merchants" class="btn btn-outline" style="height:34px;padding:0 14px;font-size:12.5px">← ร้านค้าทั้งหมด</a>
+            <?php endif; ?>
+            <div style="font-size:15px;font-weight:600"><?= $isAdmin ? $e($merchant['name']) : 'ภาพรวมร้าน' ?></div>
             <span class="mono text-muted" style="font-size:12px">#<?= str_pad((string) $merchant['id'], 4, '0', STR_PAD_LEFT) ?></span>
-            <span style="font-size:11.5px;font-weight:600;background:<?= $statusBadge[1] ?>;color:<?= $statusBadge[2] ?>;padding:3px 9px;border-radius:5px"><?= $e($statusBadge[0]) ?></span>
+            <?php if ($isAdmin): ?>
+                <span style="font-size:11.5px;font-weight:600;background:<?= $statusBadge[1] ?>;color:<?= $statusBadge[2] ?>;padding:3px 9px;border-radius:5px"><?= $e($statusBadge[0]) ?></span>
+            <?php endif; ?>
             <div class="flex-1"></div>
-            <form method="post" action="<?= APP_BASE_PATH ?>/admin/merchants/<?= $merchant['id'] ?>/impersonate"
-                  onsubmit="return confirm('สวมสิทธิ์เข้าใช้งานร้าน <?= $e(addslashes($merchant['name'])) ?>?')">
-                <button class="btn btn-outline" type="submit" style="height:34px;padding:0 14px;font-size:12.5px;color:#1D4ED8;border-color:#BFDBFE">สวมสิทธิ์</button>
-            </form>
+            <?php if ($isAdmin): ?>
+                <form method="post" action="<?= APP_BASE_PATH ?>/admin/merchants/<?= $merchant['id'] ?>/impersonate"
+                      onsubmit="return confirm('สวมสิทธิ์เข้าใช้งานร้าน <?= $e(addslashes($merchant['name'])) ?>?')">
+                    <button class="btn btn-outline" type="submit" style="height:34px;padding:0 14px;font-size:12.5px;color:#1D4ED8;border-color:#BFDBFE">สวมสิทธิ์</button>
+                </form>
+            <?php endif; ?>
         </div>
         <div class="content" style="display:grid;gap:18px;max-width:960px">
 

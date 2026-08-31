@@ -8,6 +8,7 @@ $items = [
     'members'    => ['สมาชิก',   '/members'],
     'products'   => ['สินค้า',    '/products'],
     'staff'      => ['พนักงาน',  '/staff'],
+    'overview'   => ['ภาพรวมร้าน', '/store/overview'],
     'store'      => ['ร้านค้า & สาขา', '/store'],
 ];
 $isPlatformAdmin = ($user['is_platform'] ?? false) && ($user['role'] ?? '') === 'owner';
@@ -26,7 +27,7 @@ if ($isPlatformAdmin) {
     <div class="logo">POS</div>
     <?php foreach ($items as $key => [$label, $href]):
         if (in_array($key, ['staff', 'products'], true) && !in_array($user['role'] ?? '', ['owner', 'manager'], true)) continue;
-        if ($key === 'store' && ($user['role'] ?? '') !== 'owner') continue;
+        if (in_array($key, ['store', 'overview'], true) && ($user['role'] ?? '') !== 'owner') continue;
     ?>
         <a class="nav-item<?= $active === $key ? ' active' : '' ?>" href="<?= APP_BASE_PATH . $href ?>"><?= \App\Services\View::e($label) ?></a>
     <?php endforeach; ?>
