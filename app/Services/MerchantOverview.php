@@ -12,7 +12,7 @@ use PDO;
  */
 class MerchantOverview
 {
-    /** @return array{merchant:array,branches:array,staff:array,activity:array,topSellers:array,topProducts:array}|null */
+    /** @return array{merchant:array,branches:array,staff:array,activity:array,topSellers:array,topProducts:array,vat:array}|null */
     public static function build(PDO $db, int $merchantId): ?array
     {
         $stmt = $db->prepare("SELECT m.*,
@@ -113,6 +113,24 @@ class MerchantOverview
         $productStmt->execute([$merchantId, $monthStart]);
         $topProducts = $productStmt->fetchAll();
 
-        return compact('merchant', 'branches', 'staff', 'activity', 'topSellers', 'topProducts');
+        // ยอดขายสะสมย้อนหลัง 12 เดือน เทียบเกณฑ์จดทะเบียน VAT (1.8 ล้านบาท/ปี)
+        $vatThreshold = 1_800_000.0;
+        $months = [];
+        for ($m = 11; $m >= 0; $m--) {
+            $months[date('Y-m', strtotime("first day of -$m month"))] = 0.0;
+        }
+        $vatStart = date('Y-m-01', strtotime('first day of -11 month')) . ' 00:00:00';
+        $vatStmt = $db->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COALESCE(SUM(grand_total),0) AS revenue
+            FROM sales WHERE merchant_id = ? AND status = 'completed' AND created_at >= ?
+            GROUP BY ym");
+        $vatStmt->execute([$merchantId, $vatStart]);
+        foreach ($vatStmt->fetchAll() as $r) {
+            if (array_key_exists($r['ym'], $months)) {
+                $months[$r['ym']] = (float) $r['revenue'];
+            }
+        }
+        $vat = ['threshold' => $vatThreshold, 'months' => $months, 'total12' => array_sum($months)];
+
+        return compact('merchant', 'branches', 'staff', 'activity', 'topSellers', 'topProducts', 'vat');
     }
 }

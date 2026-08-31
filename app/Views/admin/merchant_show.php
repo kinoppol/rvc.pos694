@@ -126,6 +126,61 @@ $statusBadge = [
                 <?php endforeach; ?>
             </div>
 
+            <?php
+            $vt = (float) $vat['threshold'];
+            $v12 = (float) $vat['total12'];
+            $vpct = $vt > 0 ? min(100, round($v12 / $vt * 100, 1)) : 0;
+            $vreached = $v12 >= $vt;
+            $vnear = !$vreached && $vpct >= 70;
+            $vcolor = $vreached ? '#DC2626' : ($vnear ? '#D97706' : '#059669');
+            $vscale = max($vt, $v12) * 1.08;
+            $thMonth = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            $fmtMonth = function ($ym) use ($thMonth) {
+                [$y, $m] = explode('-', $ym);
+                return $thMonth[(int) $m] . ' ' . (((int) $y + 543) % 100);
+            };
+            ?>
+            <div class="card" style="padding:20px;display:grid;gap:14px">
+                <div class="flex" style="align-items:baseline;gap:10px;flex-wrap:wrap">
+                    <div style="font-size:14px;font-weight:600">ยอดขายสะสมรอบ 12 เดือน · เกณฑ์จดทะเบียน VAT</div>
+                    <span class="text-muted" style="font-size:11px"><?= $e($fmtMonth(array_key_first($vat['months']))) ?> – <?= $e($fmtMonth(array_key_last($vat['months']))) ?></span>
+                </div>
+
+                <div class="flex" style="justify-content:space-between;align-items:baseline;font-size:12.5px">
+                    <span class="mono" style="font-size:16px;font-weight:700;color:<?= $vcolor ?>"><?= $e($money($v12)) ?></span>
+                    <span class="text-muted mono">/ <?= $e($money($vt)) ?> (<?= $vpct ?>%)</span>
+                </div>
+                <div style="height:14px;border-radius:8px;background:var(--bg-lighter);overflow:hidden">
+                    <div style="height:100%;width:<?= $vpct ?>%;background:<?= $vcolor ?>;transition:width .3s"></div>
+                </div>
+                <div style="font-size:12px;padding:9px 12px;border-radius:8px;background:<?= $vreached ? '#FEE2E2' : ($vnear ? '#FEF3C7' : '#ECFDF5') ?>;color:<?= $vreached ? '#991B1B' : ($vnear ? '#92400E' : '#065F46') ?>">
+                    <?php if ($vreached): ?>
+                        ⚠️ ยอดขายรอบ 12 เดือนถึง/เกิน 1.8 ล้านบาทแล้ว — ตามกฎหมายต้องยื่นคำขอจดทะเบียนภาษีมูลค่าเพิ่ม (ภ.พ.01) ภายใน 30 วัน
+                    <?php elseif ($vnear): ?>
+                        ใกล้ถึงเกณฑ์แล้ว เหลืออีก <?= $e($money($vt - $v12)) ?> — เตรียมความพร้อมสำหรับการจดทะเบียน VAT
+                    <?php else: ?>
+                        ยังไม่ถึงเกณฑ์ เหลืออีก <?= $e($money($vt - $v12)) ?> จึงจะถึง 1.8 ล้านบาท
+                    <?php endif; ?>
+                </div>
+
+                <div style="position:relative;height:170px;display:flex;align-items:flex-end;gap:5px;margin-top:18px">
+                    <div style="position:absolute;left:0;right:0;bottom:<?= round($vt / $vscale * 100, 2) ?>%;border-top:2px dashed #DC2626">
+                        <span style="position:absolute;right:0;top:-15px;font-size:9.5px;color:#DC2626;font-weight:600">เกณฑ์ ฿1.8 ล้าน</span>
+                    </div>
+                    <?php $cum = 0.0; foreach ($vat['months'] as $ym => $rev): $cum += (float) $rev; ?>
+                        <div style="flex:1;height:100%;display:flex;align-items:flex-end" title="ถึงสิ้น <?= $e($fmtMonth($ym)) ?> · สะสม <?= $e($money($cum)) ?> · เดือนนั้น <?= $e($money($rev)) ?>">
+                            <div style="width:100%;height:<?= round($cum / $vscale * 100, 2) ?>%;min-height:<?= $cum > 0 ? 2 : 0 ?>px;border-radius:3px 3px 0 0;background:<?= $cum >= $vt ? '#DC2626' : 'linear-gradient(180deg,#3B82F6,#1D4ED8)' ?>"></div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <div style="display:flex;gap:5px" class="text-muted mono">
+                    <?php foreach ($vat['months'] as $ym => $rev): ?>
+                        <div style="flex:1;text-align:center;font-size:8.5px"><?= $e($fmtMonth($ym)) ?></div>
+                    <?php endforeach; ?>
+                </div>
+                <span class="text-muted" style="font-size:10.5px">แท่ง = ยอดขายสะสมนับจากต้นรอบ (บิลที่ชำระแล้ว)</span>
+            </div>
+
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px">
                 <div class="card" style="padding:20px;display:grid;gap:14px">
                     <div style="font-size:14px;font-weight:600">พนักงานแยกตามบทบาท</div>
