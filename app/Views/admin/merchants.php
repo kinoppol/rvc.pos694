@@ -37,6 +37,7 @@
                         <tr style="border-top:1px solid var(--border)">
                             <td style="padding:10px 14px">
                                 <div style="font-weight:600"><?= \App\Services\View::e($m['name']) ?></div>
+                                <div class="text-muted mono" style="font-size:11px">รหัสร้าน: #<?= str_pad((string) $m['id'], 4, '0', STR_PAD_LEFT) ?></div>
                                 <?php if ($m['tax_id']): ?>
                                     <div class="text-muted mono" style="font-size:11px">Tax ID: <?= \App\Services\View::e($m['tax_id']) ?></div>
                                 <?php endif; ?>
