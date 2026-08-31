@@ -8,7 +8,7 @@ $items = [
     'members'    => ['สมาชิก',   '/members'],
     'products'   => ['สินค้า',    '/products'],
     'staff'      => ['พนักงาน',  '/staff'],
-    'store'      => ['ร้านค้า',   '/store'],
+    'store'      => ['ร้านค้า & สาขา', '/store'],
     'migrations' => ['Migrations', '/admin/migrations'],
 ];
 $isPlatformAdmin = ($user['is_platform'] ?? false) && ($user['role'] ?? '') === 'owner';
@@ -36,7 +36,7 @@ if ($isPlatformAdmin) {
     <?php if ($isPlatformAdmin): ?>
         <div style="font-size:9.5px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.07em;padding:14px 14px 4px">Platform Admin</div>
         <a class="nav-item<?= $active === 'admin_merchants' ? ' active' : '' ?>" href="<?= APP_BASE_PATH ?>/admin/merchants" style="display:flex;justify-content:space-between;align-items:center">
-            ร้านค้า
+            ร้านค้าทั้งหมด
             <?php if ($pendingCount > 0): ?>
                 <span style="background:#DC2626;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center"><?= $pendingCount ?></span>
             <?php endif; ?>
