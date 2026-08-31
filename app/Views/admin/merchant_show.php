@@ -143,6 +143,50 @@ $statusBadge = [
                 </div>
             </div>
 
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px">
+                <div class="card" style="padding:20px;display:grid;gap:12px">
+                    <div style="font-size:14px;font-weight:600">พนักงานขายทำยอดสูงสุด (เดือนนี้)</div>
+                    <?php if (!$topSellers): ?>
+                        <div class="text-muted" style="font-size:12px">ยังไม่มียอดขายในเดือนนี้</div>
+                    <?php else: ?>
+                        <?php $medal = ['🥇', '🥈', '🥉']; foreach ($topSellers as $i => $s): ?>
+                            <div class="flex" style="align-items:center;gap:10px;border-top:<?= $i ? '1px solid var(--border)' : 'none' ?>;padding-top:<?= $i ? '10px' : '0' ?>">
+                                <span style="font-size:17px;flex:none"><?= $medal[$i] ?? ($i + 1) ?></span>
+                                <div style="flex:1;min-width:0">
+                                    <div style="font-weight:600;font-size:12.5px"><?= $e($s['full_name']) ?></div>
+                                    <div class="text-muted mono" style="font-size:10.5px"><?= (int) $s['bills'] ?> บิล</div>
+                                </div>
+                                <div class="mono" style="font-weight:700;font-size:13px;color:#1D4ED8"><?= $e($money($s['revenue'])) ?></div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+
+                <div class="card" style="padding:20px;display:grid;gap:12px">
+                    <div style="font-size:14px;font-weight:600">สินค้าขายดี 10 อันดับ (เดือนนี้)</div>
+                    <?php if (!$topProducts): ?>
+                        <div class="text-muted" style="font-size:12px">ยังไม่มียอดขายในเดือนนี้</div>
+                    <?php else: ?>
+                        <?php
+                        $prodPalette = ['#2563EB', '#0891B2', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#EF4444', '#14B8A6', '#F97316', '#6366F1'];
+                        $maxQty = max(1, ...array_map(fn ($r) => (int) $r['qty'], $topProducts));
+                        foreach ($topProducts as $i => $r): ?>
+                            <div class="flex" style="align-items:center;gap:10px;border-top:<?= $i ? '1px solid var(--border)' : 'none' ?>;padding-top:<?= $i ? '8px' : '0' ?>">
+                                <span class="mono text-muted" style="font-size:11px;width:16px;flex:none;text-align:right"><?= $i + 1 ?></span>
+                                <div style="flex:1;min-width:0">
+                                    <div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?= $e($r['name']) ?></div>
+                                    <div style="height:6px;border-radius:3px;margin-top:4px;background:<?= $prodPalette[$i % 10] ?>;width:<?= max(4, (int) round((int) $r['qty'] / $maxQty * 100)) ?>%"></div>
+                                </div>
+                                <div style="text-align:right;flex:none">
+                                    <div class="mono" style="font-weight:700;font-size:12.5px"><?= (int) $r['qty'] ?> ชิ้น</div>
+                                    <div class="mono text-muted" style="font-size:10.5px"><?= $e($money($r['revenue'])) ?></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <div class="card" style="padding:20px;display:grid;gap:14px">
                 <div class="flex" style="align-items:baseline;gap:12px;flex-wrap:wrap">
                     <div style="font-size:14px;font-weight:600">ยอดขายรายวัน (14 วันล่าสุด)</div>
